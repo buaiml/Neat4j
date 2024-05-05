@@ -47,7 +47,7 @@ class AddConnectionMutation(override val neat: Neat): Mutation {
                 connection = neat.createConnection(a.id, b.id)
             }
 
-            connection.weight = rand.nextFloat()
+            connection.weight = rand.nextFloat() * 2 - 1
             genome.connections.add(connection)
             genome.connections.sort()
             return

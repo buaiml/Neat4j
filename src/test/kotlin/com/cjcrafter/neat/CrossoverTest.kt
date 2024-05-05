@@ -10,8 +10,8 @@ class CrossoverTest {
         val neat = NeatImpl(2, 1, 100)
 
         // create 2 genomes to crossover
-        val genome1 = neat.createGenome()
-        val genome2 = neat.createGenome()
+        val genome1 = neat.createGenome(true)
+        val genome2 = neat.createGenome(true)
 
         // create a connection between 2 nodes
         val connection = neat.createConnection(0, 1)

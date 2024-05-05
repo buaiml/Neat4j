@@ -43,8 +43,8 @@ class AddNodeMutation(override val neat: Neat) : Mutation {
         b.weight = randomConnection.weight
         b.enabled = randomConnection.enabled
 
-        // Remove the old connection gene, and add the 2 replacement genes
-        genome.connections.remove(randomConnection)
+        // Disable the old connection gene, and add the 2 replacement genes
+        randomConnection.enabled = false
         genome.connections.add(a)
         genome.connections.add(b)
 

@@ -134,7 +134,7 @@ class Genome(
 
             // Create a new empty genome, so we can accumulate the properties
             // its parents
-            val child = neat.createGenome()
+            val child = neat.createGenome(true)
 
             // BitTable used to prevent duplicating 1 node. This table basically
             // just acts like a Set<NodeGene>, and we can quickly check if a gene
