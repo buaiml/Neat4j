@@ -32,12 +32,12 @@ class WeightsMutation(override val neat: Neat) : Mutation {
         for (connection in genome.connections) {
             // minor weight shift
             if (rand.nextFloat() < neat.parameters.mutationWeightShiftChance) {
-                connection.weight += (rand.nextFloat() * 2 - 1) * neat.parameters.mutationWeightShiftAmount
+                connection.weight += rand.nextGaussian().toFloat() * neat.parameters.mutationWeightShiftAmount
             }
 
             // complete weight randomization
             if (rand.nextFloat() < neat.parameters.mutationWeightRandomizeChance) {
-                connection.weight = rand.nextFloat() * 2 - 1
+                connection.weight = rand.nextGaussian().toFloat()
             }
         }
     }

@@ -73,7 +73,7 @@ class NeatImpl(
             for (input in 0 until countInputNodes) {
                 for (output in countInputNodes until countInputNodes + countOutputNodes) {
                     val connection = createConnection(input, output)
-                    connection.weight = ThreadLocalRandom.current().nextFloat() * 2 - 1
+                    connection.weight = ThreadLocalRandom.current().nextGaussian().toFloat()
                     genome.connections.add(connection)
                     genome.connections.sort()
                 }
