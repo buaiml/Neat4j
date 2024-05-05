@@ -26,8 +26,7 @@ class XorTest {
         for (i in 0 until steps) {
 
             // Calculate the score for each client
-            val clients = neat.clients
-            for (client in clients) {
+            for (client in neat.clients) {
                 client.score = 4.0
                 for (pair in xor) {
                     val input = pair.first
@@ -59,5 +58,65 @@ class XorTest {
             val normalized = if (result[0] > 0.5f) 1f else 0f
             assertEquals(output[0], normalized, "${input[1]} XOR ${input[2]} = $normalized (expected ${output[0]}).")
         }
+    }
+
+    @Test
+    fun testUntilTrue() {
+        val neat = NeatImpl(3, 1, 150)
+        val debug = NeatPrinter(neat)
+        debug.print()
+
+        val xor = listOf(
+            Pair(floatArrayOf(1f, 0f, 0f), floatArrayOf(0f)),
+            Pair(floatArrayOf(1f, 0f, 1f), floatArrayOf(1f)),
+            Pair(floatArrayOf(1f, 1f, 0f), floatArrayOf(1f)),
+            Pair(floatArrayOf(1f, 1f, 1f), floatArrayOf(0f)),
+        )
+
+        var generations = 0
+        while (true)  {
+            for (client in neat.clients) {
+                client.score = 4.0
+                for (pair in xor) {
+                    val input = pair.first
+                    val output = pair.second
+
+                    val result = client.calculator.calculate(input).join()
+
+                    // Calculate the score
+                    val diff = abs(result[0] - output[0])
+                    client.score -= diff
+                }
+
+                // Square the score to make it more important
+                client.score *= client.score
+            }
+
+            if (passes(neat.clients.maxByOrNull { it.score }!!, xor)) {
+                break
+            }
+
+            neat.evolve()
+            generations++
+            println(generations)
+
+            if (generations % 10 == 0) {
+                debug.print()
+            }
+        }
+    }
+
+    private fun passes(client: Client, xor: List<Pair<FloatArray, FloatArray>>): Boolean {
+        for (pair in xor) {
+            val input = pair.first
+            val output = pair.second
+
+            val result = client.calculator.calculate(input).join()
+            val normalized = if (result[0] > 0.5f) 1f else 0f
+            if (output[0] != normalized) {
+                return false
+            }
+        }
+        return true
     }
 }

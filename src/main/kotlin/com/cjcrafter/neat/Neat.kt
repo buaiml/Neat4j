@@ -166,16 +166,24 @@ interface Neat {
          * chance to trigger itself. This mutation adds a connection to the
          * genome.
          */
-        var mutationAddConnectionChance: Float = 0.03f
+        var mutationAddConnectionChance: Float = 0.05f
 
         /**
          * The percentage of each species to kill off.
          */
-        var killPercentage: Float = 0.6f
+        var killPercentage: Float = 0.75f
 
         /**
          * The number of generations to wait before starting to kill of species.
          */
         var speciesGracePeriod: Int = 1
+
+        /**
+         * When the score of the best client in a species has not improved for
+         * this number of generations, the species is considered stagnant. When
+         * a species is stagnant, only the highest scoring client is allowed to
+         * reproduce, all other clients are killed off.
+         */
+        var stagnationLimit: Int = 15
     }
 }

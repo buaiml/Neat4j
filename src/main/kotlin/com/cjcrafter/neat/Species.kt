@@ -24,6 +24,12 @@ class Species(
     var generations = 0
     private var isExtinct = false
 
+    // A species may become stagnant if it does not improve over a certain number
+    // of generations. This is used to track the number of generations that the
+    // species has not improved.
+    private var staleness = 0
+    private var bestScore = 0.0
+
     init {
         base.species = this
         clients.add(base)
@@ -139,6 +145,27 @@ class Species(
         // Sort the clients by their score, so we only kill off the worst
         // performing clients (keeping the strongest clients alive)
         clients.sort()
+
+        // If the best client has improved, then reset the staleness counter
+        if (clients.last().score > bestScore) {
+            bestScore = clients.last().score
+            staleness = 0
+        } else {
+            staleness++
+        }
+
+        // If the species has been stagnant for too long, then we need to
+        // kill off all but the best client. This will allow the best client
+        // to continue to evolve, or the species will die off.
+        if (staleness >= neat.parameters.stagnationLimit) {
+            val best = clients.last()
+            clients.forEach { it.species = null }
+            clients.clear()
+
+            base = best
+            put(best, true)
+            return
+        }
 
         // Remove the worst performing clients from this species
         val size = clients.size
