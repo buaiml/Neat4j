@@ -10,7 +10,7 @@ class ProbabilityMap<E> {
         val offset: Double,
     ) : Comparable<Entry<E>> {
         override fun compareTo(other: Entry<E>): Int {
-            return (offset - other.offset).toInt()
+            return offset.compareTo(other.offset)
         }
 
         override fun equals(other: Any?): Boolean {
@@ -28,6 +28,7 @@ class ProbabilityMap<E> {
         }
     }
 
+    private val splittableRandom = SplittableRandom()
     private val treeMap: TreeMap<Entry<E>, Entry<E>> = TreeMap()
     private var total = 0.0
 
@@ -38,8 +39,8 @@ class ProbabilityMap<E> {
     }
 
     fun get(): E {
-        val random = Random().nextDouble() * total
-        val entry = treeMap.ceilingEntry(Entry(null, random, 0.0))?.value
+        val random = splittableRandom.nextDouble() * total
+        val entry = treeMap.floorKey(Entry(null, 0.0, random))
         return entry?.element!!
     }
 }
