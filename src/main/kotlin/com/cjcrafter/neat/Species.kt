@@ -2,6 +2,7 @@ package com.cjcrafter.neat
 
 import com.cjcrafter.neat.genome.Genome
 import java.util.concurrent.ThreadLocalRandom
+import kotlin.math.roundToInt
 
 /**
  * Represents a species of clients. A species is a group of clients that are
@@ -14,11 +15,13 @@ import java.util.concurrent.ThreadLocalRandom
  */
 class Species(
     override val neat: Neat,
-    private var base: Client
+    val id: Int,
+    private var base: Client,
 ): NeatInstance, Comparable<Species> {
 
     val clients: MutableList<Client> = mutableListOf()
     var score = 0.0
+    var generations = 0
     private var isExtinct = false
 
     init {
@@ -89,6 +92,7 @@ class Species(
         // when score is exactly 0, we end up with a species that has no chance
         // of breeding. We need to make sure that the final score is non-zero.
         score = score.coerceAtLeast(0.0001)
+        generations++
     }
 
     /**
@@ -127,13 +131,18 @@ class Species(
     fun kill(percentage: Float) {
         assert(percentage in 0.0..1.0)
 
+        // If the species is young and small, then we should not kill off any...
+        // This is to protect species that are creating new innovations.
+        if (generations <= neat.parameters.speciesGracePeriod && clients.size <= 2)
+            return
+
         // Sort the clients by their score, so we only kill off the worst
         // performing clients (keeping the strongest clients alive)
         clients.sort()
 
         // Remove the worst performing clients from this species
         val size = clients.size
-        val kill = (size * percentage).toInt()
+        val kill = (size * percentage).roundToInt()
 
         // since the lowest score is at the beginning of the list, we can just
         // remove the first `kill` clients.
@@ -144,7 +153,11 @@ class Species(
 
         // If we removed the base client, we need to select a new base client
         if (base !in clients) {
-            base = random()!!
+            if (clients.isEmpty()) {
+                extirpate()
+            } else {
+                base = random()!!
+            }
         }
     }
 

@@ -40,7 +40,11 @@ interface Neat {
 
     val clients: List<Client>
 
-    fun createGenome(): Genome
+    val species: List<Species>
+
+    fun createGenome(): Genome = createGenome(false)
+
+    fun createGenome(forceEmpty: Boolean): Genome
 
     fun createNode(): NodeGene
 
@@ -168,5 +172,10 @@ interface Neat {
          * The percentage of each species to kill off.
          */
         var killPercentage: Float = 0.6f
+
+        /**
+         * The number of generations to wait before starting to kill of species.
+         */
+        var speciesGracePeriod: Int = 1
     }
 }

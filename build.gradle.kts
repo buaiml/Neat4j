@@ -31,6 +31,7 @@ dependencies {
     runtimeOnly("org.lwjgl", "lwjgl-stb", classifier = lwjglNatives)
 
     implementation("org.joml:joml:1.10.5")
+    implementation("de.m3y.kformat:kformat:0.11")
 
     testImplementation(kotlin("test"))
 }

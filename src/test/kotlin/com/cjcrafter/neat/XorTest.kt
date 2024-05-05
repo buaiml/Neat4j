@@ -12,6 +12,8 @@ class XorTest {
         // The first input node is the bias node, which is always 1. The other 2 input nodes
         // are the XOR inputs (either 0 or 1). The output node is the XOR result.
         val neat: Neat = NeatImpl(3, 1, 100)
+        val debug = NeatPrinter(neat)
+        debug.print()
 
         val xor = listOf(
             Pair(floatArrayOf(1f, 0f, 0f), floatArrayOf(0f)),
@@ -21,44 +23,29 @@ class XorTest {
         )
 
         val steps = 100
-        val averageScores = FloatArray(steps)
-        val highestScores = FloatArray(steps)
         for (i in 0 until steps) {
-
-            var scoreSum = 0f
 
             // Calculate the score for each client
             val clients = neat.clients
             for (client in clients) {
-                var score = 0.0
+                client.score = 4.0
                 for (pair in xor) {
                     val input = pair.first
                     val output = pair.second
 
                     val result = client.calculator.calculate(input).join()
-                    // Normalize the outputs, since we expect either 0 or 1
-                    // result[0] = if (result[0] > 0.5f) 1f else 0f
 
                     // Calculate the score
-                    score += 1 - abs(result[0] - output[0])
+                    val diff = abs(result[0] - output[0])
+                    client.score -= diff * diff
                 }
-
-                client.score = score / xor.size
-                scoreSum += score.toFloat() / xor.size
-
-                highestScores[i] = maxOf(highestScores[i], client.score.toFloat())
             }
 
-            // Calculate the average score
-            averageScores[i] = scoreSum / clients.size.toFloat()
-
-            // Do a generation step
-            neat.evolve()
-        }
-
-        // Print the average scores
-        for (i in 0 until steps) {
-            println("Step $i: ${averageScores[i]} : ${highestScores[i]}")
+            if (i != steps - 1) {
+                // Do a generation step
+                neat.evolve()
+            }
+            debug.print()
         }
 
         // The best client should have a working XOR network
@@ -70,7 +57,7 @@ class XorTest {
 
             val result = bestClient.calculator.calculate(input).join()
             val normalized = if (result[0] > 0.5f) 1f else 0f
-            assertEquals(output[0], normalized)
+            assertEquals(output[0], normalized, "${input[1]} XOR ${input[2]} = $normalized (expected ${output[0]}).")
         }
     }
 }

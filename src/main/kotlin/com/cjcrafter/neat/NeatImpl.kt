@@ -10,6 +10,7 @@ import com.cjcrafter.neat.mutate.ToggleMutation
 import com.cjcrafter.neat.mutate.WeightsMutation
 import com.cjcrafter.neat.util.ProbabilityMap
 import org.joml.Vector2f
+import java.util.concurrent.ThreadLocalRandom
 
 class NeatImpl(
     override val countInputNodes: Int,
@@ -33,7 +34,8 @@ class NeatImpl(
 
     // The clients that are managed by this NEAT instance
     override val clients: List<Client>
-    val species: MutableList<Species>
+    override val species: MutableList<Species>
+    private var speciesCounter = 0
 
     init {
         // Create the input nodes, which are on the left side of the neural network
@@ -52,12 +54,12 @@ class NeatImpl(
         clients = List(countClients) { id -> Client(this, id) }
 
         // Create a default species and add all clients to it
-        val species = Species(this, clients[0])
-        clients.forEach { species.put(it, force = true) }
+        val species = Species(this, speciesCounter++, clients[0])
+        clients.subList(1, clients.size).forEach { species.put(it, force = true) }
         this.species = mutableListOf(species)
     }
 
-    override fun createGenome(): Genome {
+    override fun createGenome(forceEmpty: Boolean): Genome {
         val genome = Genome(this)
 
         // The genome starts out empty, so we need to add all the required nodes
@@ -66,12 +68,14 @@ class NeatImpl(
             genome.nodes.add(node)
         }
 
-        if (parameters.fullNetwork) {
+        if (!forceEmpty && parameters.fullNetwork) {
             // Create a connection between all input and output nodes
             for (input in 0 until countInputNodes) {
                 for (output in countInputNodes until countInputNodes + countOutputNodes) {
                     val connection = createConnection(input, output)
+                    connection.weight = ThreadLocalRandom.current().nextFloat() * 2 - 1
                     genome.connections.add(connection)
+                    genome.connections.sort()
                 }
             }
         }
@@ -124,10 +128,12 @@ class NeatImpl(
     }
 
     override fun evolve() {
+        // Remove all clients from their species (except for the base client "representative")
         for (species in species) {
             species.reset()
         }
 
+        // Sort each client into a matching
         for (client in clients) {
             if (client.species == null) {
                 for (species in species) {
@@ -136,8 +142,9 @@ class NeatImpl(
                 }
             }
 
+            // If the client still doesn't have a species, then we need to create a new one
             if (client.species == null) {
-                val species = Species(this, client)
+                val species = Species(this, speciesCounter++, client)
                 this.species.add(species)
             }
         }
