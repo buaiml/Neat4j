@@ -2,6 +2,7 @@ package com.cjcrafter.neat.genome
 
 import com.cjcrafter.neat.Neat
 import org.joml.Vector2f
+import org.joml.Vector2fc
 
 /**
  * Represents a node in the neural network.
@@ -16,7 +17,7 @@ import org.joml.Vector2f
 class NodeGene internal constructor(
     override val neat: Neat,
     override var id: Int,
-    val position: Vector2f = Vector2f(),
+    var position: Vector2fc = Vector2f(),
 ) : Gene, Cloneable {
     override val type: Gene.Type = Gene.Type.NODE
 

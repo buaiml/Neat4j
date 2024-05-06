@@ -23,7 +23,7 @@ class SimpleCalculator(genome: Genome) : Calculator {
         // categories. This is important because we need to know which nodes are
         // inputs, hidden, and outputs.
         for (node in genome.nodes) {
-            val newNode = Node(node.position.x)
+            val newNode = Node(node.position.x())
             nodeCache[node.id] = newNode
 
             when {

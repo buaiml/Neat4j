@@ -40,13 +40,13 @@ class NeatImpl(
     init {
         // Create the input nodes, which are on the left side of the neural network
         for (i in 0 until countInputNodes) {
-            val position = Vector2f(0.1f, (i.toFloat() + 1) / countInputNodes)
+            val position = Vector2f(0.1f, (i.toFloat() + 1) / (countInputNodes + 1))
             nodeCache.add(NodeGene(this, i, position))
         }
 
         // Create the output nodes, which are on the right side of the neural network
         for (i in countInputNodes until countInputNodes + countOutputNodes) {
-            val position = Vector2f(0.9f, (i.toFloat() + 1) / countOutputNodes)
+            val position = Vector2f(0.9f, (i.toFloat() + 1 - countInputNodes) / (countOutputNodes + 1))
             nodeCache.add(NodeGene(this, i, position))
         }
 
@@ -121,6 +121,17 @@ class NeatImpl(
         if (connection.replacementNode == -1) {
             val node = createNode()
             connection.replacementNode = node.id
+
+            // Calculate the midpoint of the 2 nodes
+            val from: NodeGene = getNode(connection.fromId)
+            val to: NodeGene = getNode(connection.toId)
+            val midpoint = from.position.lerp(to.position, 0.5f, Vector2f())
+
+            // Jitter the position vertically, so that the connections won't
+            // overlap significantly. This is ONLY important for visualization.
+            midpoint.y += ThreadLocalRandom.current().nextFloat() * 0.1f - 0.05f
+
+            node.position = midpoint
             return node
         } else {
             return getNode(connection.replacementNode)

@@ -26,11 +26,11 @@ class AddConnectionMutation(override val neat: Neat): Mutation {
             var b = genome.nodes[rand.nextInt(genome.nodes.size)]
 
             // Prevent self-connections, and vertical connections
-            if (a.id == b.id || a.position.x == b.position.x)
+            if (a.id == b.id || a.position.x() == b.position.x())
                 continue
 
             // Make sure that the connection we create is left->right
-            val isFlip = a.position.x > b.position.x
+            val isFlip = a.position.x() > b.position.x()
             if (isFlip) {
                 val temp = a
                 a = b
