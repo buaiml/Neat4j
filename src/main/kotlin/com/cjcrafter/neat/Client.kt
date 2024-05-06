@@ -7,9 +7,14 @@ import com.cjcrafter.neat.genome.Genome
 class Client(
     override val neat: Neat,
     val id: Int,
-    var genome: Genome = neat.createGenome(),
+    genome: Genome = neat.createGenome(),
 ) : NeatInstance, Comparable<Client> {
 
+    var genome = genome
+        set(value) {
+            field = value
+            calculator0 = null
+        }
     var score: Double = 0.0
     var species: Species? = null
 

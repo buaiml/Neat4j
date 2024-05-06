@@ -89,7 +89,7 @@ class NeatImpl(
         else if (id == nodeCache.size)
             return createNode()
         else
-            return nodeCache[id]
+            return nodeCache[id].clone()
     }
 
     override fun createNode(): NodeGene {
