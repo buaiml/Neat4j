@@ -1,27 +1,27 @@
 package com.cjcrafter.neat.compute
 
 import com.cjcrafter.neat.genome.Genome
-import com.cjcrafter.neat.genome.NodeGene
 import java.util.concurrent.CompletableFuture
 import kotlin.math.exp
 
+/**
+ * Wraps the nodes/connections of a [Genome] so you can calculate outputs.
+ *
+ * The calculator only works if connections flow left->right.
+ *
+ * @param genome The genome to base the calculator off of
+ */
 class SimpleCalculator(genome: Genome) : Calculator {
 
-    private val inputs: List<Node>
-    private val hidden: List<Node>
-    private val outputs: List<Node>
+    private val inputs = mutableListOf<Node>()
+    private val hidden = mutableListOf<Node>()
+    private val outputs = mutableListOf<Node>()
 
     init {
-        val inputs = mutableListOf<Node>()
-        val hidden = mutableListOf<Node>()
-        val outputs = mutableListOf<Node>()
-
         // Maps a node gene to the calculator node. This is used later for connections
         val nodeCache = mutableMapOf<Int, Node>()
 
-        // Loop through all nodes in the genome, and sort them into their respective
-        // categories. This is important because we need to know which nodes are
-        // inputs, hidden, and outputs.
+        // Sorts the nodes into their respective lists
         for (node in genome.nodes) {
             val newNode = Node(node.position.x())
             nodeCache[node.id] = newNode
@@ -34,10 +34,7 @@ class SimpleCalculator(genome: Genome) : Calculator {
             }
         }
 
-        // Sort the hidden nodes by their x position. This is important because
-        // connections have to go from left to right, and we need to know the
-        // value of a node ON THE LEFT before we can calculate the value of a node
-        // ON THE RIGHT.
+        // We need connections to be left->right
         hidden.sort()
 
         // Loop through all connections, and add connections to our "calculator nodes"
@@ -52,10 +49,6 @@ class SimpleCalculator(genome: Genome) : Calculator {
             val output = nodeCache[connection.toId]!!
             output.incoming.add(newConnection)
         }
-
-        this.inputs = inputs
-        this.hidden = hidden
-        this.outputs = outputs
     }
 
     @Synchronized
@@ -63,15 +56,11 @@ class SimpleCalculator(genome: Genome) : Calculator {
         if (input.size != inputs.size)
             throw IllegalArgumentException("Input size does not match genome input size")
 
-        // Set input values
+        // Order is important... Fill inputs first, calculate left->right
         for (i in input.indices)
             inputs[i].output = input[i]
-
-        // Calculate hidden nodes
         for (node in hidden)
             node.calculate()
-
-        // Calculate output nodes
         for (node in outputs)
             node.calculate()
 
@@ -95,7 +84,9 @@ class SimpleCalculator(genome: Genome) : Calculator {
         }
 
         fun activate(value: Float): Float {
-            return 1f / (1f + exp(-4.9f * value))
+            // This factor is used to make the sigmoid function *almost* linear around 0
+            val factor = 4.9f
+            return 1f / (1f + exp(-factor * value))
         }
 
         override fun compareTo(other: Node): Int {
