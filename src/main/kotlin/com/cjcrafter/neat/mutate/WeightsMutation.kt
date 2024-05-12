@@ -1,6 +1,7 @@
 package com.cjcrafter.neat.mutate
 
 import com.cjcrafter.neat.Neat
+import com.cjcrafter.neat.genome.ConnectionGene
 import com.cjcrafter.neat.genome.Genome
 import java.util.concurrent.ThreadLocalRandom
 
@@ -30,15 +31,16 @@ class WeightsMutation(override val neat: Neat) : Mutation {
 
         // Each connection has a chance to be mutated
         for (connection in genome.connections) {
-            // minor weight shift
-            if (rand.nextFloat() < neat.parameters.mutationWeightShiftChance) {
-                connection.weight += rand.nextGaussian().toFloat() * neat.parameters.mutationWeightShiftAmount
-            }
+            mutateOne(rand, connection)
+        }
+    }
 
-            // complete weight randomization
-            if (rand.nextFloat() < neat.parameters.mutationWeightRandomizeChance) {
-                connection.weight = rand.nextGaussian().toFloat()
-            }
+    private fun mutateOne(random: ThreadLocalRandom, connection: ConnectionGene) {
+        // minor weight shift
+        if (random.nextFloat() < neat.parameters.mutationWeightShiftChance) {
+            connection.weight += random.nextGaussian().toFloat() * neat.parameters.mutationWeightShiftAmount
+        } else {
+            connection.weight = random.nextGaussian().toFloat()
         }
     }
 }
