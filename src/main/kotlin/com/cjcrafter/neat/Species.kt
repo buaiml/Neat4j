@@ -17,9 +17,10 @@ class Species(
     override val neat: Neat,
     val id: Int,
     private var base: Client,
-): NeatInstance, Comparable<Species> {
+): NeatInstance, ClientHolder, Comparable<Species> {
 
-    val clients: MutableList<Client> = mutableListOf()
+    override val clients: MutableList<Client> = mutableListOf()
+    override var champion: Client? = null
     var score = 0.0
     var generations = 0
     private var isExtinct = false
@@ -92,6 +93,11 @@ class Species(
         score = 0.0
         for (client in clients) {
             score += client.score
+
+            // Keep track of the best client in this species
+            if (champion == null || client.score > champion!!.score) {
+                champion = client
+            }
         }
         score /= clients.size
 
@@ -106,6 +112,7 @@ class Species(
      */
     fun reset() {
         score = 0.0
+        champion = null
 
         // Use some random client as the new base
         base = random() ?: base

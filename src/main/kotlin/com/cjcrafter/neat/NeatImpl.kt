@@ -201,6 +201,12 @@ class NeatImpl(
                 client.mutate()
                 species.put(client, true)
             }
+
+            // Elitism; the best client in each species is copied to the next
+            // generation without any changes.
+            else if (client != client.species?.champion) {
+                client.mutate()
+            }
         }
     }
 }
