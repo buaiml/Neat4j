@@ -204,8 +204,11 @@ class Species(
         // Make sure the first parent (the main parent) is the one that scores
         // higher. This will cause the child to inherit more from the stronger
         // parent.
-        val (main, other) = if (a.score > b.score) a to b else b to a
-        return main.genome % other.genome
+        return if (a > b) {
+            a.genome % b.genome
+        } else {
+            b.genome % a.genome
+        }
     }
 
     override fun compareTo(other: Species): Int {

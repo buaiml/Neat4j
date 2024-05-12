@@ -46,7 +46,7 @@ class NeatPrinter(
     fun print(print: PrintStream = System.out) {
         table {
             header("Species", "Clients", "Score", "Nodes", "Connections")
-            for (species in neat.species) {
+            for (species in neat.allSpecies) {
                 val (nodes, connections, score) = averages(species.clients)
                 row("#${species.id}", species.clients.size, score, nodes, connections)
             }

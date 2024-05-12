@@ -40,7 +40,7 @@ interface Neat {
 
     val clients: List<Client>
 
-    val species: List<Species>
+    val allSpecies: List<Species>
 
     fun createGenome(): Genome = createGenome(false)
 
@@ -135,13 +135,7 @@ interface Neat {
          * to shift the weight of a connection. Typically, you want this to be
          * a minor perturbation, so <0.2 is a good value.
          */
-        var mutationWeightShiftAmount: Float = 0.1f
-
-        /**
-         * Used by [com.cjcrafter.neat.mutate.WeightsMutation] for the chance
-         * to trigger a randomization of the weight of a connection.
-         */
-        var mutationWeightRandomizeChance: Float = 0.1f
+        var mutationWeightShiftAmount: Float = 0.15f
 
         /**
          * Used by [com.cjcrafter.neat.mutate.ToggleMutation] for the chance
