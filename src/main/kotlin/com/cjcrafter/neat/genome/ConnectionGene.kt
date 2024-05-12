@@ -65,7 +65,8 @@ class ConnectionGene(
         other as ConnectionGene
 
         if (neat != other.neat) throw IllegalArgumentException("Cannot compare genes of different Neat instances")
-        if (id != other.id) return false
+        if (fromId != other.fromId) return false
+        if (toId != other.toId) return false
 
         return true
     }
