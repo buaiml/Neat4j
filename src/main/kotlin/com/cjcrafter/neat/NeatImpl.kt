@@ -23,7 +23,7 @@ class NeatImpl(
     override val mutations: List<Mutation> = listOf(
         AddConnectionMutation(this),
         AddNodeMutation(this),
-        ToggleMutation(this),
+        //ToggleMutation(this),
         WeightsMutation(this),
     )
 
@@ -34,29 +34,25 @@ class NeatImpl(
 
     // The clients that are managed by this NEAT instance
     override val clients: List<Client>
-    override val species: MutableList<Species>
+    override val allSpecies: MutableList<Species> = mutableListOf()
     private var speciesCounter = 0
 
     init {
         // Create the input nodes, which are on the left side of the neural network
         for (i in 0 until countInputNodes) {
-            val position = Vector2f(0.1f, (i.toFloat() + 1) / (countInputNodes + 1))
-            nodeCache.add(NodeGene(this, i, position))
+            val newNode = createNode()
+            newNode.position = Vector2f(0.1f, (i.toFloat() + 1) / (countInputNodes + 1))
         }
 
         // Create the output nodes, which are on the right side of the neural network
-        for (i in countInputNodes until countInputNodes + countOutputNodes) {
-            val position = Vector2f(0.9f, (i.toFloat() + 1 - countInputNodes) / (countOutputNodes + 1))
-            nodeCache.add(NodeGene(this, i, position))
+        for (i in 0 until countOutputNodes) {
+            val newNode = createNode()
+            newNode.position = Vector2f(0.9f, (i.toFloat() + 1 - countInputNodes) / (countOutputNodes + 1))
         }
 
         // Create the default genomes for all the clients
         clients = List(countClients) { id -> Client(this, id) }
-
-        // Create a default species and add all clients to it
-        val species = Species(this, speciesCounter++, clients[0])
-        clients.subList(1, clients.size).forEach { species.put(it, force = true) }
-        this.species = mutableListOf(species)
+        sortClientsIntoSpecies()
     }
 
     override fun createGenome(forceEmpty: Boolean): Genome {
@@ -75,7 +71,6 @@ class NeatImpl(
                     val connection = createConnection(input, output)
                     connection.weight = ThreadLocalRandom.current().nextGaussian().toFloat()
                     genome.connections.add(connection)
-                    genome.connections.sort()
                 }
             }
         }
@@ -138,30 +133,49 @@ class NeatImpl(
         }
     }
 
-    override fun evolve() {
-        // Remove all clients from their species (except for the base client "representative")
-        for (species in species) {
+    /**
+     * Sorts all clients into their matching species.
+     *
+     * Clients will always be in *some* species, but during the evolve()
+     * function, a client's genome may no longer match the species. This
+     * method will reset all clients' species.
+     */
+    fun sortClientsIntoSpecies() {
+        // Remove all clients from their species
+        for (species in allSpecies) {
             species.reset()
         }
 
-        // Sort each client into a matching
         for (client in clients) {
-            if (client.species == null) {
-                for (species in species) {
-                    if (species.put(client))
-                        break
-                }
+
+            // when this is true, this client is the base client for some species
+            if (client.species != null)
+                continue
+
+            // Try to sort the client into one of the existing species
+            var isFoundMatchingSpecies = false
+            for (species in allSpecies) {
+                isFoundMatchingSpecies = species.put(client)
+
+                if (isFoundMatchingSpecies)
+                    break
             }
 
-            // If the client still doesn't have a species, then we need to create a new one
-            if (client.species == null) {
+            // When no species match this client, create a new one!
+            if (!isFoundMatchingSpecies) {
                 val species = Species(this, speciesCounter++, client)
-                this.species.add(species)
+                allSpecies.add(species)
             }
         }
+    }
+
+    override fun evolve() {
+        // once we have changed the clients, we have to sort them into their
+        // matching species (or create new ones to match!)
+        sortClientsIntoSpecies()
 
         // Kill off the worst performing clients in each species
-        val iterator = species.iterator()
+        val iterator = allSpecies.iterator()
         while (iterator.hasNext()) {
             val species = iterator.next()
             species.evaluate()
@@ -179,7 +193,7 @@ class NeatImpl(
         // breeding. It has a higher chance of being sorted into a species
         // with a higher score.
         val probabilityMap = ProbabilityMap<Species>()
-        species.forEach { probabilityMap[it] = it.score }
+        allSpecies.forEach { probabilityMap[it] = it.score }
         for (client in clients) {
             if (client.species == null) {
                 val species = probabilityMap.get()
