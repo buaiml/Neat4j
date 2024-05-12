@@ -34,6 +34,7 @@ dependencies {
     implementation("de.m3y.kformat:kformat:0.11")
 
     testImplementation(kotlin("test"))
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
 }
 
 tasks.test {

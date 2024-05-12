@@ -46,9 +46,6 @@ class CalculatorTest {
         genome.connections.add(ConnectionGene(neat, 3, newNode.id, 3).apply { weight = -1.5f })
         genome.connections.add(ConnectionGene(neat, 4, 1, 3).apply { weight = 0.6f })
         genome.connections.add(ConnectionGene(neat, 5, 2, 3).apply { weight = 0.6f })
-        // sort
-        genome.nodes.sort()
-        genome.connections.sort()
 
         val calculator = SimpleCalculator(genome)
 
