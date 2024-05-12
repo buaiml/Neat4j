@@ -2,6 +2,7 @@ package com.cjcrafter.neat.genome
 
 import com.cjcrafter.neat.Neat
 import com.cjcrafter.neat.NeatInstance
+import com.cjcrafter.neat.util.OrderedSet
 import java.util.BitSet
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.math.abs
@@ -18,8 +19,8 @@ class Genome(
     override val neat: Neat,
 ) : NeatInstance {
 
-    val nodes = ArrayList<NodeGene>()
-    val connections = ArrayList<ConnectionGene>()
+    val nodes = OrderedSet<NodeGene>()
+    val connections = OrderedSet<ConnectionGene>()
 
     /**
      * Calculates the distance between this genome and another genome.
@@ -54,6 +55,12 @@ class Genome(
      */
     operator fun rem(other: Genome): Genome {
         return crossOver(neat, this, other)
+    }
+
+    override fun toString(): String {
+        val hiddenNodes = nodes.size - neat.countInputNodes - neat.countOutputNodes
+        val innovations = connections.size
+        return "Genome(nodes=${nodes.size}, hidden=$hiddenNodes, innovations=$innovations)"
     }
 
     companion object {
@@ -136,16 +143,6 @@ class Genome(
             // its parents
             val child = neat.createGenome(true)
 
-            // BitTable used to prevent duplicating 1 node. This table basically
-            // just acts like a Set<NodeGene>, and we can quickly check if a gene
-            // with a specific id (it's index in the bit table) is already added
-            val bitTable = BitSet(max(a.nodes.last().id, b.nodes.last().id))
-
-            // The bittable is empty, so we need to add the input and output nodes
-            for (i in 0 until neat.countInputNodes + neat.countOutputNodes) {
-                bitTable.set(child.nodes[i].id)
-            }
-
             // We want to iterate over both genomes simultaneously, and copy connections
             var indexA = 0
             var indexB = 0
@@ -156,15 +153,15 @@ class Genome(
                 if (connectionA.id == connectionB.id) {
                     val flag = ThreadLocalRandom.current().nextBoolean() // 50% chance
                     if (flag) {
-                        addConnection(bitTable, child, a, connectionA)
+                        addConnection(child, a, connectionA)
                     } else {
-                        addConnection(bitTable, child, b, connectionB)
+                        addConnection(child, b, connectionB)
                     }
 
                     indexA++
                     indexB++
                 } else if (connectionA.id < connectionB.id) {
-                    addConnection(bitTable, child, a, connectionA)
+                    addConnection(child, a, connectionA)
                     indexA++
                 } else {
                     // skip adding this connection... probably no good! It is
@@ -175,58 +172,32 @@ class Genome(
 
             // Copy over the excess connections from the main parent
             while (indexA < a.connections.size) {
-                addConnection(bitTable, child, a, a.connections[indexA])
+                addConnection(child, a, a.connections[indexA])
                 indexA++
             }
-
-            // We have been adding nodes randomly... We *NEED* that data to be
-            // sorted for this method to work, assuming this child will become
-            // a parent during a future iteration.
-            child.nodes.sort()
 
             return child
         }
 
         private fun addConnection(
-            nodeTable: BitSet,
             child: Genome,
             parent: Genome,
             connection: ConnectionGene,
         ) {
-            // First, actually add the connection object
             child.connections.add(connection.clone())
+            tryAddNode(child, parent, connection.fromId)
+            tryAddNode(child, parent, connection.toId)
+        }
 
-            // Try to add the "from" node gene to the genome
-            if (!nodeTable[connection.fromId]) {
-                //val index = parent.nodes.binarySearch { it.id.compareTo(connection.fromId) }
-                val index = parent.nodes.indexOfFirst { it.id == connection.fromId }
-                if (index == -1)
-                    throw IllegalStateException("Could not find node ${connection.fromId} in genome ${parent.nodes}")
-                val node = parent.nodes[index]
+        private fun tryAddNode(
+            child: Genome,
+            parent: Genome,
+            nodeId: Int,
+        ) {
+            val node = parent.nodes.find { it.id == nodeId }?.clone() ?: throw IllegalStateException("Could not find node $nodeId in genome ${parent.nodes}")
+            if (node !in child.nodes) {
                 child.nodes.add(node)
-
-                // update the bit table
-                nodeTable.set(connection.fromId)
-            }
-
-            // Try to add the "from" node gene to the genome
-            if (!nodeTable[connection.toId]) {
-                //val index = parent.nodes.binarySearch { it.id.compareTo(connection.toId) }
-                val index = parent.nodes.indexOfFirst { it.id == connection.toId }
-                if (index == -1)
-                    throw IllegalStateException("Could not find node ${connection.toId} in genome ${parent.nodes}")
-                val node = parent.nodes[index]
-                child.nodes.add(node)
-
-                // update the bit table
-                nodeTable.set(connection.fromId)
             }
         }
-    }
-
-    override fun toString(): String {
-        val hiddenNodes = nodes.size - neat.countInputNodes - neat.countOutputNodes
-        val innovations = connections.size
-        return "Genome(nodes=${nodes.size}, hidden=$hiddenNodes, innovations=$innovations)"
     }
 }

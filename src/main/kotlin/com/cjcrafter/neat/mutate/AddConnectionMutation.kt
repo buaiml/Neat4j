@@ -41,15 +41,14 @@ class AddConnectionMutation(override val neat: Neat): Mutation {
 
             if (connection != null) {
                 // Check if the connection already exists
-                if (-1 != genome.connections.binarySearch { it.compareTo(connection!!) })
+                if (connection in genome.connections)
                     continue
             } else {
                 connection = neat.createConnection(a.id, b.id)
             }
 
-            connection.weight = rand.nextFloat() * 2 - 1
+            connection.weight = rand.nextGaussian().toFloat()
             genome.connections.add(connection)
-            genome.connections.sort()
             return
         }
     }

@@ -50,9 +50,5 @@ class AddNodeMutation(override val neat: Neat) : Mutation {
 
         // Add the new node into the network
         genome.nodes.add(middle)
-
-        // Since we just added new genes, the order *could* be wrong
-        genome.connections.sort()
-        genome.nodes.sort()
     }
 }
