@@ -30,6 +30,11 @@ class ConnectionGene(
      * association, while a higher value means a stronger association.
      */
     var weight = 0.0f
+        set(value) {
+            if (value.isNaN() || value.isInfinite())
+                throw IllegalArgumentException("Invalid weight: $value")
+            field = value.coerceIn(neat.parameters.minWeight, neat.parameters.maxWeight)
+        }
 
     /**
      * Whether this connection is enabled. When disabled, the connection is

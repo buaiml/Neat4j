@@ -33,4 +33,6 @@ class Parameters @JvmOverloads constructor(
     var killPercentage: Float = 0.75f,
     var speciesGracePeriod: Int = 1,
     var stagnationLimit: Int = 15,
+    var minWeight: Float = -30.0f,
+    var maxWeight: Float = 30.0f,
 )
