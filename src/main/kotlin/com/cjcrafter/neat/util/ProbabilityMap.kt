@@ -1,46 +1,50 @@
 package com.cjcrafter.neat.util
 
-import java.util.*
+import java.util.concurrent.ThreadLocalRandom
 
 class ProbabilityMap<E> {
 
-    private class Entry<E>(
-        val element: E?,
-        val probability: Double,
-        val offset: Double,
-    ) : Comparable<Entry<E>> {
-        override fun compareTo(other: Entry<E>): Int {
-            return offset.compareTo(other.offset)
-        }
+    private class Node<E>(
+        val element: E,
+        val min: Double,
+        val max: Double,
+    )
 
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as Entry<*>
-
-            if (element != other.element) return false
-            return true
-        }
-
-        override fun hashCode(): Int {
-            return element?.hashCode() ?: 0
-        }
-    }
-
-    private val splittableRandom = SplittableRandom()
-    private val treeMap: TreeMap<Entry<E>, Entry<E>> = TreeMap()
+    private val probabilities = mutableListOf<Node<E>>()
     private var total = 0.0
 
     operator fun set(element: E, probability: Double) {
-        val entry = Entry(element, probability, total)
-        treeMap[entry] = entry
+        if (probabilities.find { it.element == element } != null) {
+            throw IllegalArgumentException("$element already exists in the probability map")
+        }
+
+        val node = Node(element, total, total + probability)
+        probabilities.add(node)
         total += probability
     }
 
     fun get(): E {
-        val random = splittableRandom.nextDouble() * total
-        val entry = treeMap.floorKey(Entry(null, 0.0, random))
-        return entry?.element!!
+        val random = ThreadLocalRandom.current().nextDouble() * total
+        return binarySearch(random).element
+    }
+
+    private fun binarySearch(value: Double): Node<E> {
+        var low = 0
+        var high = probabilities.size - 1
+
+        while (low <= high) {
+            val mid = (low + high) / 2
+            val node = probabilities[mid]
+
+            if (node.min <= value && node.max > value) {
+                return node
+            } else if (node.min > value) {
+                high = mid - 1
+            } else {
+                low = mid + 1
+            }
+        }
+
+        throw IllegalArgumentException("Could not find element for value $value")
     }
 }
