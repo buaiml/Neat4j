@@ -18,7 +18,7 @@ class Client(
     var score: Double = 0.0
     var species: Species? = null
 
-    var calculator0: Calculator? = null
+    private var calculator0: Calculator? = null
     val calculator: Calculator
         get() {
             if (calculator0 == null) {

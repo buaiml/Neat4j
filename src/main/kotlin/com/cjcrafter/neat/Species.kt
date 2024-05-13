@@ -229,13 +229,13 @@ class Species(
         other as Species
 
         if (neat != other.neat) throw IllegalArgumentException("Cannot compare species of different Neat instances")
-        if (base != other.base) return false
+        if (id != other.id) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        return base.hashCode()
+        return id
     }
 
     override fun toString(): String {
