@@ -1,11 +1,15 @@
 package com.cjcrafter.neat.performance
 
+import com.cjcrafter.neat.NeatPrinter
 import com.cjcrafter.neat.XorUtil
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
+import java.io.File
+import java.io.PrintStream
+import java.nio.charset.Charset
 import java.util.concurrent.Executors
 import kotlin.test.Test
 
@@ -33,7 +37,7 @@ class XorPerformance {
 
         repeat(trials) {
             launch(dispatcher) {
-                val generations = testXorOnce()
+                val generations = testXorOnce(it)
                 channel.send(generations)
             }
         }
@@ -56,15 +60,26 @@ class XorPerformance {
         histogram.forEach { (key, value) ->
             println("$key: ${"*".repeat(value)}")
         }
-
     }
 
-    fun testXorOnce(): Int {
+    fun testXorOnce(trial: Int): Int {
         val neat = XorUtil.createNeat()
+        val debug = NeatPrinter(neat)
+        val saveFolder = File("xor-performance")
+        saveFolder.mkdirs()
+        val saveFile = File(saveFolder, "xor-performance-$trial.txt")
 
         var generation = 0
         while (!XorUtil.score(neat) && generation < 2500) {
             generation++
+
+            // When the generation exceeds the norm, we should save debug info
+            // to file.
+            if (false && generation > 100) {
+                val info = debug.render()
+                saveFile.appendText(info.toString() + "\n", Charset.defaultCharset())
+            }
+
             neat.evolve()
         }
 

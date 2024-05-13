@@ -42,9 +42,8 @@ class NeatPrinter(
         return Triple(nodes.toFloat() / clients.size, connections.toFloat() / clients.size, score / clients.size)
     }
 
-    @JvmOverloads
-    fun print(print: PrintStream = System.out) {
-        table {
+    fun render(): StringBuilder {
+        return table {
             header("Species", "Clients", "Score", "Nodes", "Connections")
             for (species in neat.allSpecies) {
                 val (nodes, connections, score) = averages(species.clients)
@@ -54,12 +53,16 @@ class NeatPrinter(
             val (nodes, connections, score) = averages()
             row("Total", neat.clients.size, score, nodes, connections)
 
+            // Extra info
+            line("Total Nodes: ${(neat as NeatImpl).nodeCache.size}")
+            line("Total Connections: ${neat.connectionCache.size}")
+
             hints {
                 precision("Score", 2)
                 precision("Nodes", 1)
                 precision("Connections", 1)
                 borderStyle = Table.BorderStyle.SINGLE_LINE
             }
-        }.print(print)
+        }.render()
     }
 }

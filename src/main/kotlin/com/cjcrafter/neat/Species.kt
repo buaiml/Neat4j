@@ -146,7 +146,7 @@ class Species(
 
         // If the species is young and small, then we should not kill off any...
         // This is to protect species that are creating new innovations.
-        if (generations <= neat.parameters.speciesGracePeriod && clients.size <= 2)
+        if (generations <= neat.parameters.speciesGracePeriod)
             return
 
         // Sort the clients by their score, so we only kill off the worst

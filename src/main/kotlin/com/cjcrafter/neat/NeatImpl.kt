@@ -27,9 +27,9 @@ class NeatImpl(
 
     // Cache these genes to prevent creating duplicates... We share these genes
     // between different genomes by cloning them when needed.
-    private val connectionCache: MutableMap<ConnectionGene, ConnectionGene> = mutableMapOf()
-    private val nodeCache: MutableList<NodeGene> = mutableListOf()
-    private val replacements: MutableMap<ConnectionGene, Int> = mutableMapOf()
+    val connectionCache: MutableMap<ConnectionGene, ConnectionGene> = mutableMapOf()
+    val nodeCache: MutableList<NodeGene> = mutableListOf()
+    val replacements: MutableMap<ConnectionGene, Int> = mutableMapOf()
 
     // The clients that are managed by this NEAT instance
     override val clients: List<Client>
