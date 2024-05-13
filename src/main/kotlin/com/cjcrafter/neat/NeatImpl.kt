@@ -6,7 +6,6 @@ import com.cjcrafter.neat.genome.NodeGene
 import com.cjcrafter.neat.mutate.AddConnectionMutation
 import com.cjcrafter.neat.mutate.AddNodeMutation
 import com.cjcrafter.neat.mutate.Mutation
-import com.cjcrafter.neat.mutate.ToggleMutation
 import com.cjcrafter.neat.mutate.WeightsMutation
 import com.cjcrafter.neat.util.ProbabilityMap
 import org.joml.Vector2f
@@ -16,14 +15,13 @@ class NeatImpl(
     override val countInputNodes: Int,
     override val countOutputNodes: Int,
     override val countClients: Int,
+    override val parameters: Parameters = Parameters()
 ) : Neat {
 
     // The "config options" and parameters of this NEAT instance
-    override val parameters: Neat.Parameters = object : Neat.Parameters() {}
     override val mutations: List<Mutation> = listOf(
         AddConnectionMutation(this),
         AddNodeMutation(this),
-        //ToggleMutation(this),
         WeightsMutation(this),
     )
 
@@ -65,7 +63,7 @@ class NeatImpl(
             genome.nodes.add(node)
         }
 
-        if (!forceEmpty && parameters.fullNetwork) {
+        if (!forceEmpty && parameters.isFullNetwork) {
             // Create a connection between all input and output nodes
             for (input in 0 until countInputNodes) {
                 for (output in countInputNodes until countInputNodes + countOutputNodes) {

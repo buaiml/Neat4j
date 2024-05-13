@@ -13,7 +13,7 @@ class AddConnectionMutation(override val neat: Neat): Mutation {
     override fun mutate(genome: Genome) {
         // chance to trigger
         val rand = ThreadLocalRandom.current()
-        if (rand.nextFloat() >= neat.parameters.mutationAddConnectionChance)
+        if (rand.nextFloat() >= neat.parameters.mutateAddConnectionChance)
             return
 
         // Try 50 times to generate a new connection. It might be impossible to

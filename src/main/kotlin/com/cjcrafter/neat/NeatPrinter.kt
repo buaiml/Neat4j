@@ -34,7 +34,7 @@ class NeatPrinter(
             connections += client.genome.connections.size
             score += client.score.toFloat()
 
-            if (neat.parameters.fullNetwork) {
+            if (neat.parameters.isFullNetwork) {
                 connections -= neat.countInputNodes * neat.countOutputNodes
             }
         }

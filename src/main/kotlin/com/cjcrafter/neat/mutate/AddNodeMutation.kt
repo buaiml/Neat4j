@@ -20,7 +20,7 @@ class AddNodeMutation(override val neat: Neat) : Mutation {
     override fun mutate(genome: Genome) {
         // chance to trigger
         val rand = ThreadLocalRandom.current()
-        if (rand.nextFloat() >= neat.parameters.mutationAddNodeChance)
+        if (rand.nextFloat() >= neat.parameters.mutateAddNodeChance)
             return
 
         // If there are no connections, we can't add a node

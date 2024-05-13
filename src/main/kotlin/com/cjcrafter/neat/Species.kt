@@ -59,7 +59,7 @@ class Species(
      */
     fun matches(client: Client): Boolean {
         val distance: Float = base.genome - client.genome
-        return distance < neat.parameters.speciesDistanceThreshold
+        return distance < neat.parameters.speciesDistance
     }
 
     /**

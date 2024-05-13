@@ -25,7 +25,7 @@ class WeightsMutation(override val neat: Neat) : Mutation {
         val rand = ThreadLocalRandom.current()
 
         // Chance to trigger the weight mutation in the first place
-        if (rand.nextFloat() < neat.parameters.mutationWeightChance) {
+        if (rand.nextFloat() < neat.parameters.mutateWeightChance) {
             return
         }
 
@@ -36,11 +36,10 @@ class WeightsMutation(override val neat: Neat) : Mutation {
     }
 
     private fun mutateOne(random: ThreadLocalRandom, connection: ConnectionGene) {
-        // minor weight shift
-        if (random.nextFloat() < neat.parameters.mutationWeightShiftChance) {
-            connection.weight += random.nextGaussian().toFloat() * neat.parameters.mutationWeightShiftAmount
+        if (random.nextFloat() < neat.parameters.mutateWeightShiftChance) {
+            connection.weight += random.nextGaussian().toFloat() * neat.parameters.mutateWeightShiftStrength
         } else {
-            connection.weight = random.nextGaussian().toFloat()
+            connection.weight = random.nextGaussian().toFloat() * neat.parameters.mutateWeightRandomizeStrength
         }
     }
 }
