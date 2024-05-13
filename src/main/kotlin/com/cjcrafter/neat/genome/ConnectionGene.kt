@@ -25,14 +25,7 @@ class ConnectionGene(
     override val type = Gene.Type.CONNECTION
 
     /**
-     * The id of the node that replaces this connection during a
-     * [com.cjcrafter.neat.mutate.AddNodeMutation]. This is an optimization to
-     * reduce the number of nodes created.
-     */
-    var replacementNode: Int = -1
-
-    /**
-     * The weight of this connection. When taking in an input from the [from]
+     * The weight of this connection. When taking in an input from the [fromId]
      * node, this weight is multiplied by the input value. Thus, 0.0 means no
      * association, while a higher value means a stronger association.
      */

@@ -29,8 +29,9 @@ class NeatImpl(
 
     // Cache these genes to prevent creating duplicates... We share these genes
     // between different genomes by cloning them when needed.
-    private val connectionCache: MutableMap<Pair<Int, Int>, ConnectionGene> = mutableMapOf()
+    private val connectionCache: MutableMap<ConnectionGene, ConnectionGene> = mutableMapOf()
     private val nodeCache: MutableList<NodeGene> = mutableListOf()
+    private val replacements: MutableMap<ConnectionGene, Int> = mutableMapOf()
 
     // The clients that are managed by this NEAT instance
     override val clients: List<Client>
@@ -96,8 +97,8 @@ class NeatImpl(
     }
 
     override fun getConnectionOrNull(fromId: Int, toId: Int): ConnectionGene? {
-        val pair = fromId to toId
-        return connectionCache[pair]?.clone() // Return a clone to prevent modification
+        val hash = ConnectionGene(this, -1, fromId, toId)
+        return connectionCache[hash]?.clone() // Return a clone to prevent modification
     }
 
     override fun createConnection(fromId: Int, toId: Int): ConnectionGene {
@@ -107,15 +108,15 @@ class NeatImpl(
         // Create a new connection
         val id = connectionCache.size
         val connection = ConnectionGene(this, id, fromId, toId)
-        connectionCache[fromId to toId] = connection
+        connectionCache[connection] = connection
         return connection
     }
 
     override fun getOrCreateReplacementNode(connection: ConnectionGene): NodeGene {
-        val connection = getConnectionOrNull(connection.fromId, connection.toId)!!
-        if (connection.replacementNode == -1) {
+        val nodeId: Int? = replacements[connection]
+        if (nodeId == null) {
             val node = createNode()
-            connection.replacementNode = node.id
+            replacements[connection] = node.id
 
             // Calculate the midpoint of the 2 nodes
             val from: NodeGene = getNode(connection.fromId)
@@ -129,7 +130,7 @@ class NeatImpl(
             node.position = midpoint
             return node
         } else {
-            return getNode(connection.replacementNode)
+            return getNode(nodeId)
         }
     }
 

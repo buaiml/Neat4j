@@ -85,6 +85,11 @@ class NodeGene internal constructor(
     }
 
     override fun toString(): String {
+        val type = when {
+            isInput() -> "Input"
+            isOutput() -> "Output"
+            else -> "Hidden"
+        }
         return "NodeGene(id=$id, position=$position, type=$type)"
     }
 }
