@@ -151,12 +151,7 @@ class Genome(
                 val connectionB = b.connections[indexB]
 
                 if (connectionA.id == connectionB.id) {
-                    val flag = ThreadLocalRandom.current().nextBoolean() // 50% chance
-                    if (flag) {
-                        addConnection(child, a, connectionA)
-                    } else {
-                        addConnection(child, b, connectionB)
-                    }
+                    addConnection(child, a, connectionA).weight = connectionA.weight * 0.5f + connectionB.weight * 0.5f
 
                     indexA++
                     indexB++
@@ -166,6 +161,7 @@ class Genome(
                 } else {
                     // skip adding this connection... probably no good! It is
                     // too different from our "main" parent a
+                    addConnection(child, b, connectionB)
                     indexB++
                 }
             }
@@ -176,6 +172,11 @@ class Genome(
                 indexA++
             }
 
+            while (indexB < b.connections.size) {
+                addConnection(child, b, b.connections[indexB])
+                indexB++
+            }
+
             return child
         }
 
@@ -183,10 +184,12 @@ class Genome(
             child: Genome,
             parent: Genome,
             connection: ConnectionGene,
-        ) {
-            child.connections.add(connection.clone())
-            tryAddNode(child, parent, connection.fromId)
-            tryAddNode(child, parent, connection.toId)
+        ): ConnectionGene {
+            val copy = connection.clone()
+            child.connections.add(copy)
+            tryAddNode(child, parent, copy.fromId)
+            tryAddNode(child, parent, copy.toId)
+            return copy
         }
 
         private fun tryAddNode(
