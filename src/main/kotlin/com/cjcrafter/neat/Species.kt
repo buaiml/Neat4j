@@ -28,8 +28,8 @@ class Species(
     // A species may become stagnant if it does not improve over a certain number
     // of generations. This is used to track the number of generations that the
     // species has not improved.
-    private var staleness = 0
-    private var bestScore = 0.0
+    var staleness = 0
+    var bestScore = 0.0
 
     init {
         base.species = this

@@ -44,10 +44,10 @@ class NeatPrinter(
 
     fun render(): StringBuilder {
         return table {
-            header("Species", "Clients", "Score", "Nodes", "Connections")
+            header("Species", "Clients", "Score", "Nodes", "Connections", "Staleness")
             for (species in neat.allSpecies) {
                 val (nodes, connections, score) = averages(species.clients)
-                row("#${species.id}", species.clients.size, score, nodes, connections)
+                row("#${species.id}", species.clients.size, score, nodes, connections, species.staleness)
             }
 
             val (nodes, connections, score) = averages()

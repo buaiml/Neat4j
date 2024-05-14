@@ -33,6 +33,9 @@ class XorPerformance {
         val channel = Channel<Int>()
         val results = mutableListOf<Int>()
 
+        val saveFolder = File("xor-performance")
+        saveFolder.deleteRecursively()
+
         val dispatcher = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()).asCoroutineDispatcher()
 
         repeat(trials) {
@@ -81,6 +84,10 @@ class XorPerformance {
             }
 
             neat.evolve()
+        }
+
+        if (generation > 60) {
+            println("Trial #$trial took $generation generations")
         }
 
         return generation

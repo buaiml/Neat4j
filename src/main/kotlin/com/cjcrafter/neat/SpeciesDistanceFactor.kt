@@ -1,8 +1,6 @@
 package com.cjcrafter.neat
 
-import kotlin.jvm.internal.Ref.FloatRef
 import kotlin.math.abs
-import kotlin.math.pow
 
 class SpeciesDistanceFactor(
     override val neat: Neat,
@@ -19,18 +17,28 @@ class SpeciesDistanceFactor(
         if (delta == 0)
             return
 
+        // When switching directions, reset velocity
         val target: Float
         if (delta > 0) {
             target = min
+            if (velocity > 0)
+                velocity = 0f
         } else {
             target = max
+            if (velocity < 0)
+                velocity = 0f
         }
+
+        // determine how fast to move towards target (if we have WAY off, we
+        // should try to move faster... but cap at 0.25 per generation)
+        val deltaTime = 0.004f * abs(delta)
 
         speciesDistance = smoothDamp(
             speciesDistance,
             target,
-            0.1f,
-            0.01f,
+            0.008f * neat.parameters.targetSpeciesCount,
+            deltaTime,
+            0.25f / deltaTime,
         )
     }
 
