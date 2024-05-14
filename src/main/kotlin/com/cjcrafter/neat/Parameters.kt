@@ -17,6 +17,7 @@ package com.cjcrafter.neat
  * @property killPercentage The percentage of species to kill.
  * @property speciesGracePeriod The number of generations to wait before killing species.
  * @property stagnationLimit The number of generations to wait before killing off all but the best client.
+ * @property targetSpecies The target number of species.
  */
 class Parameters @JvmOverloads constructor(
     var isFullNetwork: Boolean = true,
@@ -35,4 +36,5 @@ class Parameters @JvmOverloads constructor(
     var stagnationLimit: Int = 15,
     var minWeight: Float = -30.0f,
     var maxWeight: Float = 30.0f,
+    var targetSpeciesCount: Int = 10,
 )

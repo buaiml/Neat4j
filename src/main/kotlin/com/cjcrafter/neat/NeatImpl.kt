@@ -15,8 +15,9 @@ class NeatImpl(
     override val countInputNodes: Int,
     override val countOutputNodes: Int,
     override val countClients: Int,
-    override val parameters: Parameters = Parameters()
+    override val parameters: Parameters = Parameters(),
 ) : Neat {
+    override val speciesDistanceFactor = SpeciesDistanceFactor(this, parameters.speciesDistance)
 
     // The "config options" and parameters of this NEAT instance
     override val mutations: List<Mutation> = listOf(
@@ -145,6 +146,7 @@ class NeatImpl(
             species.reset()
         }
 
+        speciesDistanceFactor.update()
         for (client in clients) {
 
             // when this is true, this client is the base client for some species

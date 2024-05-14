@@ -56,6 +56,7 @@ class NeatPrinter(
             // Extra info
             line("Total Nodes: ${(neat as NeatImpl).nodeCache.size}")
             line("Total Connections: ${neat.connectionCache.size}")
+            line("Species Distance: ${neat.speciesDistanceFactor.speciesDistance}")
 
             hints {
                 precision("Score", 2)

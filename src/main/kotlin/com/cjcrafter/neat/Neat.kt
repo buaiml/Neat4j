@@ -34,6 +34,11 @@ interface Neat : ClientHolder {
     val parameters: Parameters
 
     /**
+     * Returns the species distance factor of this NEAT instance.
+     */
+    val speciesDistanceFactor: SpeciesDistanceFactor
+
+    /**
      * Returns the list of mutations that can be applied to a genome.
      */
     val mutations: List<Mutation>

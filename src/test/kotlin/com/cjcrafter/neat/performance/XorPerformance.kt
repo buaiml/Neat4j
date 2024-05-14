@@ -75,7 +75,7 @@ class XorPerformance {
 
             // When the generation exceeds the norm, we should save debug info
             // to file.
-            if (false && generation > 100) {
+            if (generation > 60) {
                 val info = debug.render()
                 saveFile.appendText(info.toString() + "\n", Charset.defaultCharset())
             }
