@@ -47,7 +47,7 @@ class NeatImpl(
         // Create the output nodes, which are on the right side of the neural network
         for (i in 0 until countOutputNodes) {
             val newNode = createNode()
-            newNode.position = Vector2f(0.9f, (i.toFloat() + 1 - countInputNodes) / (countOutputNodes + 1))
+            newNode.position = Vector2f(0.9f, (i.toFloat() + 1) / (countOutputNodes + 1))
         }
 
         // Create the default genomes for all the clients
