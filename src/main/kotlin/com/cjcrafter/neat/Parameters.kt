@@ -4,6 +4,7 @@ package com.cjcrafter.neat
  * The configuration options for the NEAT algorithm.
  *
  * @property isFullNetwork When true, networks will start fully connected.
+ * @property useBiasNode When true, a bias node will be added to the network.
  * @property disjointCoefficient Determines the strength of disjoint connections.
  * @property excessCoefficient Determines the strength of excess connections.
  * @property weightCoefficient Determines the strength of weight differences.
@@ -17,10 +18,11 @@ package com.cjcrafter.neat
  * @property killPercentage The percentage of species to kill.
  * @property speciesGracePeriod The number of generations to wait before killing species.
  * @property stagnationLimit The number of generations to wait before killing off all but the best client.
- * @property targetSpecies The target number of species.
+ * @property targetSpeciesCount The target number of species.
  */
 class Parameters @JvmOverloads constructor(
     var isFullNetwork: Boolean = true,
+    var useBiasNode: Boolean = true,
     var disjointCoefficient: Float = 1.0f,
     var excessCoefficient: Float = 1.0f,
     var weightCoefficient: Float = 0.4f,

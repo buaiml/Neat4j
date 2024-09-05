@@ -43,12 +43,20 @@ class AddNodeMutation(override val neat: Neat) : Mutation {
         b.weight = randomConnection.weight
         b.enabled = randomConnection.enabled
 
+        // Add the new node into the network
+        genome.nodes.add(middle)
+
         // Disable the old connection gene, and add the 2 replacement genes
         randomConnection.enabled = false
         genome.connections.add(a)
         genome.connections.add(b)
 
-        // Add the new node into the network
-        genome.nodes.add(middle)
+        // If this network has a bias node, connect that to this new node
+        if (genome.neat.parameters.useBiasNode) {
+            val biasNode = genome.nodes.first()
+            val biasConnection = neat.createConnection(biasNode.id, middle.id)
+            biasConnection.weight = 0f
+            genome.connections.add(biasConnection)
+        }
     }
 }

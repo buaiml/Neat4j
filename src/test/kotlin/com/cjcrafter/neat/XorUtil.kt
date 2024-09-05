@@ -21,7 +21,9 @@ object XorUtil {
     fun createNeat(): Neat {
         // 2 inputs + 1 bias
         // 1 output
-        val neat = NeatImpl(3, 1, 150)
+        val parameters = Parameters()
+        parameters.useBiasNode = false  // use our own bias node
+        val neat = NeatImpl(3, 1, 150, parameters)
         return neat
     }
 

@@ -8,7 +8,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import java.io.File
-import java.io.PrintStream
 import java.nio.charset.Charset
 import java.util.concurrent.Executors
 import kotlin.test.Test

@@ -11,16 +11,14 @@ import kotlin.math.exp
  *
  * @param genome The genome to base the calculator off of
  */
-class SimpleCalculator(genome: Genome) : Calculator {
+class SimpleCalculator(private val genome: Genome) : Calculator {
 
     private val inputs = mutableListOf<Node>()
     private val hidden = mutableListOf<Node>()
     private val outputs = mutableListOf<Node>()
+    private val nodeCache = mutableMapOf<Int, Node>()
 
     init {
-        // Maps a node gene to the calculator node. This is used later for connections
-        val nodeCache = mutableMapOf<Int, Node>()
-
         // Sorts the nodes into their respective lists
         for (node in genome.nodes) {
             val newNode = Node(node.position.x())
@@ -51,8 +49,20 @@ class SimpleCalculator(genome: Genome) : Calculator {
         }
     }
 
+    override fun getActivation(nodeId: Int): Float {
+        return nodeCache[nodeId]?.output ?: throw IllegalArgumentException("Node $nodeId does not exist")
+    }
+
     @Synchronized
     override fun calculate(input: FloatArray): CompletableFuture<FloatArray> {
+        var input = input
+        if (genome.neat.parameters.useBiasNode) {
+            // Add a bias node to the input
+            input = FloatArray(input.size + 1)
+            input[0] = 1f
+            System.arraycopy(input, 0, input, 1, input.size)
+        }
+
         if (input.size != inputs.size)
             throw IllegalArgumentException("Input size does not match genome input size")
 

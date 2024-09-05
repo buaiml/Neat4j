@@ -38,6 +38,8 @@ class NeatImpl(
     private var speciesCounter = 0
 
     init {
+        val countInputNodes = countInputNodes + (if (parameters.useBiasNode) 1 else 0)
+
         // Create the input nodes, which are on the left side of the neural network
         for (i in 0 until countInputNodes) {
             val newNode = createNode()

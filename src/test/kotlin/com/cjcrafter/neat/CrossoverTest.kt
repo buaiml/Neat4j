@@ -7,7 +7,9 @@ class CrossoverTest {
     @Test
     fun testCrossover() {
         // create a dummy Neat instance
-        val neat = NeatImpl(2, 1, 100)
+        val parameters = Parameters()
+        parameters.useBiasNode = false
+        val neat = NeatImpl(2, 1, 100, parameters)
 
         // create 2 genomes to crossover
         val genome1 = neat.createGenome(true)

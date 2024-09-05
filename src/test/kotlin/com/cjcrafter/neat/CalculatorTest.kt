@@ -10,7 +10,10 @@ class CalculatorTest {
 
     @Test
     fun testEmptyNetwork() {
-        val neat = NeatImpl(3, 1, 1)
+        val parameters = Parameters()
+        parameters.useBiasNode = false
+        val neat = NeatImpl(3, 1, 1, parameters)
+
         val genome = neat.createGenome(true)
         val calculator = SimpleCalculator(genome)
         val output = calculator.calculate(floatArrayOf(1.0f, 0.0f, 1.0f)).join()
@@ -20,7 +23,10 @@ class CalculatorTest {
 
     @Test
     fun testSimpleNetwork() {
-        val neat = NeatImpl(3, 1, 1)
+        val parameters = Parameters()
+        parameters.useBiasNode = false
+        val neat = NeatImpl(3, 1, 1, parameters)
+
         val genome = neat.createGenome(true)
         genome.connections.add(ConnectionGene(neat, 0, 0, 3).apply { weight = 1f })
         genome.connections.add(ConnectionGene(neat, 1, 1, 3).apply { weight = 1f })
@@ -35,7 +41,10 @@ class CalculatorTest {
 
     @Test
     fun testXorNetwork() {
-        val neat = NeatImpl(3, 1, 1)
+        val parameters = Parameters()
+        parameters.useBiasNode = false
+        val neat = NeatImpl(3, 1, 1, parameters)
+
         val genome = neat.createGenome(true)
         val newNode = neat.createNode()
         newNode.position = Vector2f(0.5f, 0.5f)
