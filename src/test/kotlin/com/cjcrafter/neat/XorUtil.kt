@@ -5,10 +5,10 @@ import kotlin.math.abs
 object XorUtil {
 
     val XOR_INPUTS = listOf(
-        floatArrayOf(1f, 0f, 0f),
-        floatArrayOf(1f, 0f, 1f),
-        floatArrayOf(1f, 1f, 0f),
-        floatArrayOf(1f, 1f, 1f),
+        floatArrayOf(0f, 0f),
+        floatArrayOf(0f, 1f),
+        floatArrayOf(1f, 0f),
+        floatArrayOf(1f, 1f),
     )
 
     val XOR_OUTPUTS = floatArrayOf(
@@ -22,9 +22,8 @@ object XorUtil {
         // 2 inputs + 1 bias
         // 1 output
         val parameters = Parameters()
-        parameters.useBiasNode = false  // use our own bias node
-        parameters.stagnationLimit = 10
-        val neat = NeatImpl(3, 1, 150, parameters)
+        parameters.stagnationLimit = 5
+        val neat = NeatImpl(2, 1, 150, parameters)
         return neat
     }
 

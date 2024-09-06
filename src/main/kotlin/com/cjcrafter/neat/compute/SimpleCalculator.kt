@@ -57,14 +57,14 @@ class SimpleCalculator(private val genome: Genome) : Calculator {
     override fun calculate(input: FloatArray): CompletableFuture<FloatArray> {
         var input = input
         if (genome.neat.parameters.useBiasNode) {
-            // Add a bias node to the input
-            input = FloatArray(input.size + 1)
-            input[0] = 1f
-            System.arraycopy(input, 0, input, 1, input.size)
+            val newInput = FloatArray(input.size + 1)
+            newInput[0] = 1f
+            System.arraycopy(input, 0, newInput, 1, input.size)
+            input = newInput
         }
 
         if (input.size != inputs.size)
-            throw IllegalArgumentException("Input size does not match genome input size")
+            throw IllegalArgumentException("Expected ${inputs.size} inputs, but got ${input.size}")
 
         // Order is important... Fill inputs first, calculate left->right
         for (i in input.indices)

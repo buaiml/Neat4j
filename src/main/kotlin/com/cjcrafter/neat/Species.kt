@@ -50,7 +50,7 @@ class Species(
      */
     fun getStaleRate(): Float {
         val limit = neat.parameters.stagnationLimit
-        return (staleness.toFloat() / limit).coerceAtMost(1.0f)
+        return (staleness.toFloat() / limit)
     }
 
     /**
@@ -136,12 +136,13 @@ class Species(
     /**
      * Removes all clients but 1 random client from this species.
      */
-    fun reset() {
+    fun reset(overrideBase: Client? = null) {
         score = 0.0
         champion = null
 
         // Use some random client as the new base
-        base = random() ?: base
+        base = overrideBase ?: (random() ?: base)
+        champion = base
 
         // Remove all current clients from the species (many will be resorted
         // back into this species by the managing Neat instance)
@@ -179,16 +180,10 @@ class Species(
         // performing clients (keeping the strongest clients alive)
         clients.sort()
 
-        // If the species has been stagnant for too long, then we need to
-        // kill off all but the best client. This will allow the best client
-        // to continue to evolve, or the species will die off.
-        if (isStale()) {
-            val best = clients.last()
-            clients.forEach { it.species = null }
-            clients.clear()
-
-            base = best
-            put(best, true)
+        // When a species is stale for so long, we are probably stuck in a local
+        // maximum (or the actual maximum, if one exists). In this case, we sh
+        if (getStaleRate() > 4.0) {
+            extirpate()
             return
         }
 

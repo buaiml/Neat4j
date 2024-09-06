@@ -13,9 +13,9 @@ import java.util.LinkedList
 import java.util.concurrent.ThreadLocalRandom
 
 class NeatImpl(
-    override val countInputNodes: Int,
-    override val countOutputNodes: Int,
-    override val countClients: Int,
+    override var countInputNodes: Int,
+    override var countOutputNodes: Int,
+    override var countClients: Int,
     override val parameters: Parameters = Parameters(),
 ) : Neat {
     override val speciesDistanceFactor = SpeciesDistanceFactor(this, parameters.speciesDistance)
@@ -39,7 +39,7 @@ class NeatImpl(
     private var speciesCounter = 0
 
     init {
-        val countInputNodes = countInputNodes + (if (parameters.useBiasNode) 1 else 0)
+        countInputNodes += if (parameters.useBiasNode) 1 else 0
 
         // Create the input nodes, which are on the left side of the neural network
         for (i in 0 until countInputNodes) {
@@ -218,7 +218,7 @@ class NeatImpl(
         // But as the species gets more stale, we should mutate them
         for (elite in eliteClients) {
             val staleness = elite.species!!.getStaleRate()
-            if (staleness < ThreadLocalRandom.current().nextFloat()) {
+            if (staleness > ThreadLocalRandom.current().nextFloat()) {
                 elite.mutate()
             }
         }
