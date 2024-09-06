@@ -23,6 +23,7 @@ object XorUtil {
         // 1 output
         val parameters = Parameters()
         parameters.useBiasNode = false  // use our own bias node
+        parameters.stagnationLimit = 10
         val neat = NeatImpl(3, 1, 150, parameters)
         return neat
     }

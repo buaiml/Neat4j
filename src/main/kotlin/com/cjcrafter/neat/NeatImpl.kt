@@ -9,6 +9,7 @@ import com.cjcrafter.neat.mutate.Mutation
 import com.cjcrafter.neat.mutate.WeightsMutation
 import com.cjcrafter.neat.util.ProbabilityMap
 import org.joml.Vector2f
+import java.util.LinkedList
 import java.util.concurrent.ThreadLocalRandom
 
 class NeatImpl(
@@ -142,7 +143,7 @@ class NeatImpl(
      * function, a client's genome may no longer match the species. This
      * method will reset all clients' species.
      */
-    fun sortClientsIntoSpecies() {
+    private fun sortClientsIntoSpecies() {
         // Remove all clients from their species
         for (species in allSpecies) {
             species.reset()
@@ -197,18 +198,28 @@ class NeatImpl(
         // with a higher score.
         val probabilityMap = ProbabilityMap<Species>()
         allSpecies.forEach { probabilityMap[it] = it.score }
+        val eliteClients = LinkedList<Client>()
         for (client in clients) {
-            if (client.species == null) {
-                val species = probabilityMap.get()
-                client.genome = species.breed()!!
+            val species = client.species
+            if (species == null) {
+                val newSpecies = probabilityMap.get()
+                client.genome = newSpecies.breed()!!
                 client.mutate()
-                species.put(client, true)
+                newSpecies.put(client, true)
             }
 
-            // Elitism; the best client in each species is copied to the next
-            // generation without any changes.
-            else if (client != client.species?.champion) {
-                client.mutate()
+            // Never try to change the champion of a species
+            else if (client != species.champion) {
+                eliteClients.add(client)
+            }
+        }
+
+        // Elitism: Keep the best performing client in each species
+        // But as the species gets more stale, we should mutate them
+        for (elite in eliteClients) {
+            val staleness = elite.species!!.getStaleRate()
+            if (staleness < ThreadLocalRandom.current().nextFloat()) {
+                elite.mutate()
             }
         }
     }

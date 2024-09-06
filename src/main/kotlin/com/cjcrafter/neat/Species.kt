@@ -37,6 +37,23 @@ class Species(
     }
 
     /**
+     * Returns true if the species has not improved over a couple generations.
+     */
+    fun isStale(): Boolean {
+        return staleness >= neat.parameters.stagnationLimit
+    }
+
+    /**
+     * Returns a number [0, 1] that represents how stale this species is. A
+     * value of 0 means that the species is not stale, while a value of 1 means
+     * that the species is very stale.
+     */
+    fun getStaleRate(): Float {
+        val limit = neat.parameters.stagnationLimit
+        return (staleness.toFloat() / limit).coerceAtMost(1.0f)
+    }
+
+    /**
      * Returns a random client from this species.
      */
     fun random(): Client? {
@@ -99,6 +116,15 @@ class Species(
                 champion = client
             }
         }
+
+        // If the best client has improved, then reset the staleness counter
+        if (champion!!.score > bestScore) {
+            bestScore = champion!!.score
+            staleness = 0
+        } else {
+            staleness++
+        }
+
         score /= clients.size
 
         // when score is exactly 0, we end up with a species that has no chance
@@ -153,18 +179,10 @@ class Species(
         // performing clients (keeping the strongest clients alive)
         clients.sort()
 
-        // If the best client has improved, then reset the staleness counter
-        if (clients.last().score > bestScore) {
-            bestScore = clients.last().score
-            staleness = 0
-        } else {
-            staleness++
-        }
-
         // If the species has been stagnant for too long, then we need to
         // kill off all but the best client. This will allow the best client
         // to continue to evolve, or the species will die off.
-        if (staleness >= neat.parameters.stagnationLimit) {
+        if (isStale()) {
             val best = clients.last()
             clients.forEach { it.species = null }
             clients.clear()
