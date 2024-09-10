@@ -54,6 +54,7 @@ class NeatPrinter(
             row("Total", neat.clients.size, score, nodes, connections)
 
             // Extra info
+            line("Generation #${neat.generationNumber}")
             line("Total Nodes: ${(neat as NeatImpl).nodeCache.size}")
             line("Total Connections: ${neat.connectionCache.size}")
             line("Species Distance: ${neat.speciesDistanceFactor.speciesDistance}")

@@ -19,6 +19,7 @@ class NeatImpl(
     override val parameters: Parameters = Parameters(),
 ) : Neat {
     override val speciesDistanceFactor = SpeciesDistanceFactor(this, parameters.speciesDistance)
+    override var generationNumber: Int = 0
 
     // The "config options" and parameters of this NEAT instance
     override val mutations: List<Mutation> = listOf(
@@ -177,6 +178,7 @@ class NeatImpl(
         // once we have changed the clients, we have to sort them into their
         // matching species (or create new ones to match!)
         sortClientsIntoSpecies()
+        generationNumber++
 
         // Kill off the worst performing clients in each species
         val iterator = allSpecies.iterator()

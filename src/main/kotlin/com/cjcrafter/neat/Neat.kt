@@ -39,6 +39,13 @@ interface Neat : ClientHolder {
     val speciesDistanceFactor: SpeciesDistanceFactor
 
     /**
+     * Returns the current generation of this neat instance.
+     *
+     * This number is incremented for every call to [evolve].
+     */
+    var generationNumber: Int
+
+    /**
      * Returns the list of mutations that can be applied to a genome.
      */
     val mutations: List<Mutation>
