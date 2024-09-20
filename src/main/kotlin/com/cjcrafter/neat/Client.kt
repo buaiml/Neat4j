@@ -3,6 +3,7 @@ package com.cjcrafter.neat
 import com.cjcrafter.neat.compute.Calculator
 import com.cjcrafter.neat.compute.SimpleCalculator
 import com.cjcrafter.neat.genome.Genome
+import com.cjcrafter.neat.genome.NodeGene
 
 class Client(
     override val neat: Neat,
@@ -26,6 +27,11 @@ class Client(
             }
             return calculator0!!
         }
+
+    internal fun updateNodeCounts(oldIdToNewIdCache: IntArray, nodeCache: List<NodeGene>) {
+        genome.updateNodeCounts(oldIdToNewIdCache, nodeCache)
+        calculator0 = null
+    }
 
     fun mutate() {
         for (mutation in neat.mutations) {

@@ -9,8 +9,10 @@ import com.cjcrafter.neat.mutate.Mutation
 import com.cjcrafter.neat.mutate.WeightsMutation
 import com.cjcrafter.neat.util.ProbabilityMap
 import org.joml.Vector2f
+import java.util.ArrayList
 import java.util.LinkedList
 import java.util.concurrent.ThreadLocalRandom
+import kotlin.math.min
 
 class NeatImpl(
     override var countInputNodes: Int,
@@ -35,12 +37,12 @@ class NeatImpl(
     val replacements: MutableMap<ConnectionGene, Int> = mutableMapOf()
 
     // The clients that are managed by this NEAT instance
-    override val clients: List<Client>
+    override var clients: List<Client>
     override val allSpecies: MutableList<Species> = mutableListOf()
     private var speciesCounter = 0
 
     init {
-        countInputNodes += if (parameters.useBiasNode) 1 else 0
+        this.countInputNodes += if (parameters.useBiasNode) 1 else 0
 
         // Create the input nodes, which are on the left side of the neural network
         for (i in 0 until countInputNodes) {
@@ -56,6 +58,75 @@ class NeatImpl(
 
         // Create the default genomes for all the clients
         clients = List(countClients) { id -> Client(this, id) }
+        sortClientsIntoSpecies()
+    }
+
+    fun updateNodeCounts(countInputNodes: Int, countOutputNodes: Int) {
+        if (countInputNodes < this.countInputNodes)
+            throw IllegalArgumentException("Cannot reduce the number of input nodes")
+        if (countOutputNodes < this.countOutputNodes)
+            throw IllegalArgumentException("Cannot reduce the number of output nodes")
+
+        val oldNodeCount = nodeCache.size
+        val oldCountInputNodes = this.countInputNodes
+        val oldCountOutputNodes = this.countOutputNodes
+        this.countInputNodes = countInputNodes
+        this.countOutputNodes = countOutputNodes
+
+        // Start by inserting new nodes into the cache
+        for (i in oldCountInputNodes until countInputNodes) {
+            val newNode = NodeGene(this, i)
+            nodeCache.add(i, newNode)
+        }
+        for (i in oldCountOutputNodes until countOutputNodes) {
+            val newNode = NodeGene(this, i + countInputNodes)
+            nodeCache.add(i + countInputNodes, newNode)
+        }
+
+        // Update the positions of the nodes
+        for (i in 0 until countInputNodes) {
+            val node = getNode(i)
+            node.position = Vector2f(0.1f, (i.toFloat() + 1) / (countInputNodes + 1))
+        }
+        for (i in 0 until countOutputNodes) {
+            val node = getNode(i + countInputNodes)
+            node.position = Vector2f(0.9f, (i.toFloat() + 1) / (countOutputNodes + 1))
+        }
+
+        // Update the id of each node
+        val oldIdToNewIdCache = IntArray(oldNodeCount)
+        for (i in 0 until nodeCache.size) {
+            // Happens when we add more output nodes then there are hidden nodes
+            if (nodeCache[i].id >= oldNodeCount)
+                continue
+
+            oldIdToNewIdCache[nodeCache[i].id] = i
+            nodeCache[i].id = i
+        }
+
+        // Update the connections
+        for (connection in connectionCache.keys) {
+            connection.fromId = oldIdToNewIdCache[connection.fromId]
+            connection.toId = oldIdToNewIdCache[connection.toId]
+        }
+
+        // Look at all the current genomes and update their nodes and
+        // connections to match the new ids.
+        for (client in clients) {
+            client.updateNodeCounts(oldIdToNewIdCache, nodeCache)
+        }
+    }
+
+    fun updateClients(countClients: Int) {
+        val newClients = ArrayList<Client>(countClients)
+        for (i in 0 until countClients) {
+            if (i < clients.size) {
+                newClients.add(clients[i])
+            } else {
+                newClients.add(Client(this, i))
+            }
+        }
+        clients = newClients
         sortClientsIntoSpecies()
     }
 
@@ -112,7 +183,7 @@ class NeatImpl(
         val id = connectionCache.size
         val connection = ConnectionGene(this, id, fromId, toId)
         connectionCache[connection] = connection
-        return connection
+        return connection.clone()
     }
 
     override fun getOrCreateReplacementNode(connection: ConnectionGene): NodeGene {
@@ -193,6 +264,14 @@ class NeatImpl(
                 species.extirpate()
                 iterator.remove()
             }
+        }
+
+        // If all species were killed off, then we should create a new species
+        if (allSpecies.isEmpty()) {
+            val baseClient = clients[ThreadLocalRandom.current().nextInt(clients.size)]
+            val species = Species(this, speciesCounter++, baseClient)
+            species.evaluate()  // Have a non-zero score
+            allSpecies.add(species)
         }
 
         // For each client that died, we need to sort it into a species by

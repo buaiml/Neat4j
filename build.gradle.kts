@@ -19,6 +19,12 @@ dependencies {
     implementation("org.joml:joml:1.10.5")
     implementation("de.m3y.kformat:kformat:0.11")
 
+    // Saving neural networks and Neat state to file
+    implementation("com.fasterxml.jackson.core:jackson-core:2.15.3")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.3")
+    implementation("com.fasterxml.jackson.core:jackson-annotations:2.15.3")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.3")
+
     testImplementation(kotlin("test"))
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
 }

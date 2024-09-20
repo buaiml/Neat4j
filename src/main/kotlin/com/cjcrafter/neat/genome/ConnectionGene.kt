@@ -19,8 +19,8 @@ import com.cjcrafter.neat.Neat
 class ConnectionGene(
     override val neat: Neat,
     override var id: Int,
-    val fromId: Int,
-    val toId: Int,
+    var fromId: Int,
+    var toId: Int,
 ): Gene, Cloneable {
     override val type = Gene.Type.CONNECTION
 

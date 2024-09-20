@@ -28,6 +28,14 @@ class ProbabilityMap<E> {
         return binarySearch(random).element
     }
 
+    fun isEmpty(): Boolean {
+        return probabilities.isEmpty()
+    }
+
+    fun isNotEmpty(): Boolean {
+        return probabilities.isNotEmpty()
+    }
+
     private fun binarySearch(value: Double): Node<E> {
         var low = 0
         var high = probabilities.size - 1

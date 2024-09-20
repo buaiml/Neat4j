@@ -19,8 +19,26 @@ class Genome(
     override val neat: Neat,
 ) : NeatInstance {
 
-    val nodes = OrderedSet<NodeGene>()
-    val connections = OrderedSet<ConnectionGene>()
+    var nodes = OrderedSet<NodeGene>()
+    var connections = OrderedSet<ConnectionGene>()
+
+    internal fun updateNodeCounts(oldIdToNewIdCache: IntArray, nodeCache: List<NodeGene>) {
+        val newNodes = OrderedSet<NodeGene>()
+        for (node in nodeCache) {
+            // copy node over if it is either an input or output node, or if
+            // the node is in the old list
+            if (node.isInput() || node.isOutput() || node in nodes) {
+                val newNode = node.clone()
+                newNodes.add(newNode)
+            }
+        }
+        nodes = newNodes
+
+        for (connection in connections) {
+            connection.fromId = oldIdToNewIdCache[connection.fromId]
+            connection.toId = oldIdToNewIdCache[connection.toId]
+        }
+    }
 
     /**
      * Calculates the distance between this genome and another genome.
