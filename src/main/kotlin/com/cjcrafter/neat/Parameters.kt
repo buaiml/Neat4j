@@ -35,6 +35,7 @@ class Parameters @JvmOverloads constructor(
     var mutateAddConnectionChance: Float = 0.05f,
     var killPercentage: Float = 0.75f,
     var speciesGracePeriod: Int = 1,
+    var interspeciesMatingRate: Float = 0.001f,
     var stagnationLimit: Int = 15,
     var minWeight: Float = -30.0f,
     var maxWeight: Float = 30.0f,

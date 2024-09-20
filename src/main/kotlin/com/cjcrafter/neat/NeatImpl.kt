@@ -282,6 +282,23 @@ class NeatImpl(
         val eliteClients = LinkedList<Client>()
         for (client in clients) {
             val species = client.species
+
+            // For interspecies mating, we should take random genomes from
+            // random species and breed them together. Since the resulting
+            // genome will probably be WEIRD and BAD, create a new species.
+            if (species == null && parameters.interspeciesMatingRate > ThreadLocalRandom.current().nextFloat()) {
+                val a = probabilityMap.get().random()?.genome
+                val b = probabilityMap.get().random()?.genome
+
+                if (a != null && b != null) {
+                    client.genome = a % b
+                    val species = Species(this, speciesCounter++, client)
+                    species.evaluate()
+                    allSpecies.add(species)
+                }
+            }
+
+            // Client was removed from a species, give it a new one
             if (species == null) {
                 val newSpecies = probabilityMap.get()
                 client.genome = newSpecies.breed()!!
