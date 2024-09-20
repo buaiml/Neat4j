@@ -1,6 +1,7 @@
 package com.cjcrafter.neat.mutate
 
 import com.cjcrafter.neat.Neat
+import com.cjcrafter.neat.genome.ConnectionGene
 import com.cjcrafter.neat.genome.Genome
 import java.util.concurrent.ThreadLocalRandom
 
@@ -27,9 +28,19 @@ class AddNodeMutation(override val neat: Neat) : Mutation {
         if (genome.connections.isEmpty())
             return
 
-        // Select 1 random connection. We're going to replace it with a node
-        // and 2 connections.
-        val randomConnection = genome.connections[rand.nextInt(genome.connections.size)]
+        // Bias connections are not allowed to be split. Try N times to find a
+        // connection to replace with 1 node and 2 connections.
+        val maxTries = 20
+        for (i in 0 until maxTries) {
+            val randomConnection = genome.connections[rand.nextInt(genome.connections.size)]
+            if (!randomConnection.isBiasConnection) {
+                addNode(genome, randomConnection)
+                return
+            }
+        }
+    }
+
+    fun addNode(genome: Genome, randomConnection: ConnectionGene) {
         val middle = neat.getOrCreateReplacementNode(randomConnection)
 
         // Instead of having a connection from->to, we now have a new node, "middle"
@@ -55,6 +66,7 @@ class AddNodeMutation(override val neat: Neat) : Mutation {
         if (genome.neat.parameters.useBiasNode) {
             val biasNode = genome.nodes.first()
             val biasConnection = neat.createConnection(biasNode.id, middle.id)
+            biasConnection.isBiasConnection = true
             biasConnection.weight = 0f
             genome.connections.add(biasConnection)
         }

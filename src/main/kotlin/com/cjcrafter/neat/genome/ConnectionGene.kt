@@ -23,6 +23,7 @@ class ConnectionGene(
     var toId: Int,
 ): Gene, Cloneable {
     override val type = Gene.Type.CONNECTION
+    var isBiasConnection = false
 
     /**
      * The weight of this connection. When taking in an input from the [fromId]
