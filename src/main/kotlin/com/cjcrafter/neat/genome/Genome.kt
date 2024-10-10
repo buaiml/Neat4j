@@ -3,8 +3,7 @@ package com.cjcrafter.neat.genome
 import com.cjcrafter.neat.Neat
 import com.cjcrafter.neat.NeatInstance
 import com.cjcrafter.neat.util.OrderedSet
-import java.util.BitSet
-import java.util.concurrent.ThreadLocalRandom
+import com.fasterxml.jackson.annotation.JsonIgnore
 import kotlin.math.abs
 import kotlin.math.max
 
@@ -15,9 +14,10 @@ import kotlin.math.max
  *
  * @property neat The [Neat] instance managing this object.
  */
-class Genome(
-    override val neat: Neat,
-) : NeatInstance {
+class Genome : NeatInstance {
+
+    @JsonIgnore
+    override lateinit var neat: Neat
 
     var nodes = OrderedSet<NodeGene>()
     var connections = OrderedSet<ConnectionGene>()

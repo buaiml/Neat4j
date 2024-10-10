@@ -20,14 +20,14 @@ class NeatImpl(
     override var countClients: Int,
     override val parameters: Parameters = Parameters(),
 ) : Neat {
-    override val speciesDistanceFactor = SpeciesDistanceFactor(this, parameters.speciesDistance)
+    override val speciesDistanceFactor = SpeciesDistanceFactor(parameters.speciesDistance).apply { neat = this@NeatImpl }
     override var generationNumber: Int = 0
 
     // The "config options" and parameters of this NEAT instance
     override val mutations: List<Mutation> = listOf(
-        AddConnectionMutation(this),
-        AddNodeMutation(this),
-        WeightsMutation(this),
+        AddConnectionMutation().apply { neat = this@NeatImpl },
+        AddNodeMutation().apply { neat = this@NeatImpl },
+        WeightsMutation().apply { neat = this@NeatImpl },
     )
 
     // Cache these genes to prevent creating duplicates... We share these genes
@@ -57,7 +57,7 @@ class NeatImpl(
         }
 
         // Create the default genomes for all the clients
-        clients = List(countClients) { id -> Client(this, id) }
+        clients = List(countClients) { id -> Client(id, createGenome()).apply { neat = this@NeatImpl } }
         sortClientsIntoSpecies()
     }
 
@@ -75,11 +75,11 @@ class NeatImpl(
 
         // Start by inserting new nodes into the cache
         for (i in oldCountInputNodes until countInputNodes) {
-            val newNode = NodeGene(this, i)
+            val newNode = NodeGene(i).apply { neat = this@NeatImpl }
             nodeCache.add(i, newNode)
         }
         for (i in oldCountOutputNodes until countOutputNodes) {
-            val newNode = NodeGene(this, i + countInputNodes)
+            val newNode = NodeGene(i + countInputNodes).apply { neat = this@NeatImpl }
             nodeCache.add(i + countInputNodes, newNode)
         }
 
@@ -123,7 +123,7 @@ class NeatImpl(
             if (i < clients.size) {
                 newClients.add(clients[i])
             } else {
-                newClients.add(Client(this, i))
+                newClients.add(Client(i, createGenome()).apply { neat = this@NeatImpl })
             }
         }
         clients = newClients
@@ -131,7 +131,7 @@ class NeatImpl(
     }
 
     override fun createGenome(forceEmpty: Boolean): Genome {
-        val genome = Genome(this)
+        val genome = Genome().apply { neat = this@NeatImpl }
 
         // The genome starts out empty, so we need to add all the required nodes
         for (i in 0 until countInputNodes + countOutputNodes) {
@@ -165,13 +165,13 @@ class NeatImpl(
     override fun createNode(): NodeGene {
         val id = nodeCache.size
         val position = Vector2f()
-        val node = NodeGene(this, id, position)
+        val node = NodeGene(id, position).apply { neat = this@NeatImpl }
         nodeCache.add(node)
         return node
     }
 
     override fun getConnectionOrNull(fromId: Int, toId: Int): ConnectionGene? {
-        val hash = ConnectionGene(this, -1, fromId, toId)
+        val hash = ConnectionGene(-1, fromId, toId).apply { neat = this@NeatImpl }
         return connectionCache[hash]?.clone() // Return a clone to prevent modification
     }
 
@@ -181,7 +181,7 @@ class NeatImpl(
 
         // Create a new connection
         val id = connectionCache.size
-        val connection = ConnectionGene(this, id, fromId, toId)
+        val connection = ConnectionGene(id, fromId, toId).apply { neat = this@NeatImpl }
         connectionCache[connection] = connection
         return connection.clone()
     }
@@ -239,7 +239,7 @@ class NeatImpl(
 
             // When no species match this client, create a new one!
             if (!isFoundMatchingSpecies) {
-                val species = Species(this, speciesCounter++, client)
+                val species = Species(speciesCounter++, client).apply { neat = this@NeatImpl }
                 allSpecies.add(species)
             }
         }
@@ -269,7 +269,7 @@ class NeatImpl(
         // If all species were killed off, then we should create a new species
         if (allSpecies.isEmpty()) {
             val baseClient = clients[ThreadLocalRandom.current().nextInt(clients.size)]
-            val species = Species(this, speciesCounter++, baseClient)
+            val species = Species(speciesCounter++, baseClient).apply { neat = this@NeatImpl }
             species.evaluate()  // Have a non-zero score
             allSpecies.add(species)
         }
@@ -292,7 +292,7 @@ class NeatImpl(
 
                 if (a != null && b != null) {
                     client.genome = a % b
-                    val species = Species(this, speciesCounter++, client)
+                    val species = Species(speciesCounter++, client).apply { neat = this@NeatImpl }
                     species.evaluate()
                     allSpecies.add(species)
                 }

@@ -1,6 +1,7 @@
 package com.cjcrafter.neat.genome
 
 import com.cjcrafter.neat.Neat
+import com.fasterxml.jackson.annotation.JsonIgnore
 import org.joml.Vector2f
 import org.joml.Vector2fc
 
@@ -15,11 +16,13 @@ import org.joml.Vector2fc
  * @property position The position of this node in the network.
  */
 class NodeGene internal constructor(
-    override val neat: Neat,
     override var id: Int,
     var position: Vector2fc = Vector2f(),
 ) : Gene, Cloneable {
     override val type: Gene.Type = Gene.Type.NODE
+
+    @JsonIgnore
+    override lateinit var neat: Neat
 
     /**
      * Returns true if this node is an input node.

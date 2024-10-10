@@ -1,11 +1,14 @@
 package com.cjcrafter.neat
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import kotlin.math.abs
 
 class SpeciesDistanceFactor(
-    override val neat: Neat,
     var speciesDistance: Float = 3.0f,
 ) : NeatInstance {
+
+    @JsonIgnore
+    override lateinit var neat: Neat
 
     var velocity = 0f
 

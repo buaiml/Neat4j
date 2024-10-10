@@ -1,6 +1,7 @@
 package com.cjcrafter.neat.genome
 
 import com.cjcrafter.neat.Neat
+import com.fasterxml.jackson.annotation.JsonIgnore
 
 /**
  * Represents a connection between two [NodeGene]s in a neural network.
@@ -17,13 +18,15 @@ import com.cjcrafter.neat.Neat
  * @property toId The id of the node this connection is going to.
  */
 class ConnectionGene(
-    override val neat: Neat,
     override var id: Int,
     var fromId: Int,
     var toId: Int,
 ): Gene, Cloneable {
     override val type = Gene.Type.CONNECTION
     var isBiasConnection = false
+
+    @JsonIgnore
+    override lateinit var neat: Neat
 
     /**
      * The weight of this connection. When taking in an input from the [fromId]

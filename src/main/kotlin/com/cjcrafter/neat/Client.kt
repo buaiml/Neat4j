@@ -4,12 +4,16 @@ import com.cjcrafter.neat.compute.Calculator
 import com.cjcrafter.neat.compute.SimpleCalculator
 import com.cjcrafter.neat.genome.Genome
 import com.cjcrafter.neat.genome.NodeGene
+import com.fasterxml.jackson.annotation.JacksonInject
+import com.fasterxml.jackson.annotation.JsonIgnore
 
 class Client(
-    override val neat: Neat,
     val id: Int,
-    genome: Genome = neat.createGenome(),
+    genome: Genome,
 ) : NeatInstance, Comparable<Client> {
+
+    @JsonIgnore
+    override lateinit var neat: Neat
 
     var genome = genome
         set(value) {
@@ -20,6 +24,7 @@ class Client(
     var species: Species? = null
 
     private var calculator0: Calculator? = null
+    @get:JsonIgnore
     val calculator: Calculator
         get() {
             if (calculator0 == null) {

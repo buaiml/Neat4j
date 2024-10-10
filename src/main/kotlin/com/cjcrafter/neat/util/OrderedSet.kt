@@ -1,5 +1,12 @@
 package com.cjcrafter.neat.util
 
+import com.cjcrafter.neat.serialize.OrderedSetDeserializer
+import com.cjcrafter.neat.serialize.OrderedSetSerializer
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+
+@JsonSerialize(using = OrderedSetSerializer::class)
+@JsonDeserialize(using = OrderedSetDeserializer::class)
 class OrderedSet<E : Comparable<E>> : MutableIterable<E> {
     private val list = mutableListOf<E>()
     private val map = mutableMapOf<E, E>()

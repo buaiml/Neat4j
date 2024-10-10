@@ -1,6 +1,7 @@
 package com.cjcrafter.neat
 
 import com.cjcrafter.neat.genome.Genome
+import com.fasterxml.jackson.annotation.JsonIgnore
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.math.roundToInt
 
@@ -14,16 +15,18 @@ import kotlin.math.roundToInt
  * @constructor Create empty Species
  */
 class Species(
-    override val neat: Neat,
     val id: Int,
-    private var base: Client,
+    var base: Client,
 ): NeatInstance, ClientHolder, Comparable<Species> {
+
+    @JsonIgnore
+    override lateinit var neat: Neat
 
     override val clients: MutableList<Client> = mutableListOf()
     override var champion: Client? = null
     var score = 0.0
     var generations = 0
-    private var isExtinct = false
+    var isExtinct = false
 
     // A species may become stagnant if it does not improve over a certain number
     // of generations. This is used to track the number of generations that the

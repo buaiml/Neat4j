@@ -3,6 +3,7 @@ package com.cjcrafter.neat.mutate
 import com.cjcrafter.neat.Neat
 import com.cjcrafter.neat.genome.ConnectionGene
 import com.cjcrafter.neat.genome.Genome
+import com.fasterxml.jackson.annotation.JsonIgnore
 import java.util.concurrent.ThreadLocalRandom
 
 /**
@@ -20,7 +21,11 @@ import java.util.concurrent.ThreadLocalRandom
  *
  * @property neat The [Neat] instance managing this object.
  */
-class WeightsMutation(override val neat: Neat) : Mutation {
+class WeightsMutation : Mutation {
+
+    @JsonIgnore
+    override lateinit var neat: Neat
+
     override fun mutate(genome: Genome) {
         val rand = ThreadLocalRandom.current()
 
