@@ -1,9 +1,7 @@
 package com.cjcrafter.neat.mutate
 
-import com.cjcrafter.neat.Neat
 import com.cjcrafter.neat.genome.ConnectionGene
 import com.cjcrafter.neat.genome.Genome
-import com.fasterxml.jackson.annotation.JsonIgnore
 import java.util.concurrent.ThreadLocalRandom
 
 /**
@@ -15,13 +13,8 @@ import java.util.concurrent.ThreadLocalRandom
  * this, we copy the weight of the previous connection, and apply that weight to
  * our 2 new connections. **Note:** Depending on your activation function, this
  * is *not* a perfect way to prevent changes.
- *
- * @property neat The [Neat] instance managing this object.
  */
-class AddNodeMutation : Mutation {
-
-    @JsonIgnore
-    override lateinit var neat: Neat
+class AddNodeMutation : Mutation() {
 
     override fun mutate(genome: Genome) {
         // chance to trigger

@@ -11,19 +11,20 @@ import kotlin.math.roundToInt
  * of the clients.
  *
  * @property neat The [Neat] instance managing this object.
- * @property base The base client of this species.
+ * @property baseId The base client of this species.
  * @constructor Create empty Species
  */
 class Species(
     val id: Int,
-    var base: Client,
-): NeatInstance, ClientHolder, Comparable<Species> {
+    var baseId: Int,
+): NeatInstance, Comparable<Species> {
 
     @JsonIgnore
     override lateinit var neat: Neat
 
-    override val clients: MutableList<Client> = mutableListOf()
-    override var champion: Client? = null
+    val clientIds: MutableList<Int> = mutableListOf()
+
+    var champion: Client? = null
     var score = 0.0
     var generations = 0
     var isExtinct = false
@@ -34,9 +35,14 @@ class Species(
     var staleness = 0
     var bestScore = 0.0
 
+    var base: Client
+        @JsonIgnore
+        get() = neat.clients[baseId]
+        @JsonIgnore
+        set(value) { baseId = value.id }
+
     init {
-        base.species = this
-        clients.add(base)
+        clientIds.add(baseId)
     }
 
     /**
@@ -60,11 +66,11 @@ class Species(
      * Returns a random client from this species.
      */
     fun random(): Client? {
-        if (clients.isEmpty())
+        if (clientIds.isEmpty())
             return null
 
-        val index = ThreadLocalRandom.current().nextInt(clients.size)
-        return clients[index]
+        val index = ThreadLocalRandom.current().nextInt(clientIds.size)
+        return neat.clients[clientIds[index]]
     }
 
     /**
@@ -98,8 +104,8 @@ class Species(
             throw IllegalStateException("Species is extinct")
 
         if (force || matches(client)) {
-            client.species = this
-            clients.add(client)
+            client.speciesId = id
+            clientIds.add(client.id)
             return true
         }
         return false
@@ -111,7 +117,8 @@ class Species(
      */
     fun evaluate() {
         score = 0.0
-        for (client in clients) {
+        for (clientId in clientIds) {
+            val client = neat.clients[clientId]
             score += client.score
 
             // Keep track of the best client in this species
@@ -128,7 +135,7 @@ class Species(
             staleness++
         }
 
-        score /= clients.size
+        score /= clientIds.size
 
         // when score is exactly 0, we end up with a species that has no chance
         // of breeding. We need to make sure that the final score is non-zero.
@@ -149,8 +156,8 @@ class Species(
 
         // Remove all current clients from the species (many will be resorted
         // back into this species by the managing Neat instance)
-        clients.forEach { it.species = null }
-        clients.clear()
+        clientIds.forEach { neat.clients[it].speciesId = null }
+        clientIds.clear()
 
         // Add the new base client back in
         put(base, true)
@@ -162,8 +169,8 @@ class Species(
      */
     fun extirpate() {
         isExtinct = true
-        clients.forEach { it.species = null }
-        clients.clear()
+        clientIds.forEach { neat.clients[it].speciesId = null }
+        clientIds.clear()
     }
 
     /**
@@ -181,6 +188,7 @@ class Species(
 
         // Sort the clients by their score, so we only kill off the worst
         // performing clients (keeping the strongest clients alive)
+        val clients = clientIds.map { neat.clients[it] }.toMutableList()
         clients.sort()
 
         // When a species is stale for so long, we are probably stuck in a local
@@ -197,7 +205,7 @@ class Species(
         // since the lowest score is at the beginning of the list, we can just
         // remove the first `kill` clients.
         for (i in 0 until kill) {
-            clients[0].species = null
+            clients[0].speciesId = null
             clients.removeAt(0)
         }
 
@@ -209,6 +217,9 @@ class Species(
                 base = random()!!
             }
         }
+
+        clientIds.clear()
+        clientIds.addAll(clients.map { it.id })
     }
 
     /**

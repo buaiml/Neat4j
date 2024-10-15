@@ -21,7 +21,7 @@ class Client(
             calculator0 = null
         }
     var score: Double = 0.0
-    var species: Species? = null
+    var speciesId: Int? = null
 
     private var calculator0: Calculator? = null
     @get:JsonIgnore
@@ -69,6 +69,6 @@ class Client(
     }
 
     override fun toString(): String {
-        return "Client(id=$id, genome=$genome, score=$score, species=$species)"
+        return "Client(id=$id, genome=$genome, score=$score, species=$speciesId)"
     }
 }

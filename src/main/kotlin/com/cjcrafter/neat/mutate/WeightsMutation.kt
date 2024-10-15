@@ -1,9 +1,7 @@
 package com.cjcrafter.neat.mutate
 
-import com.cjcrafter.neat.Neat
 import com.cjcrafter.neat.genome.ConnectionGene
 import com.cjcrafter.neat.genome.Genome
-import com.fasterxml.jackson.annotation.JsonIgnore
 import java.util.concurrent.ThreadLocalRandom
 
 /**
@@ -18,13 +16,8 @@ import java.util.concurrent.ThreadLocalRandom
  * maximum, and need to explore other areas of the solution space. By randomizing
  * the weight of a connection, we might significantly impact the phenotype of
  * the neural network.
- *
- * @property neat The [Neat] instance managing this object.
  */
-class WeightsMutation : Mutation {
-
-    @JsonIgnore
-    override lateinit var neat: Neat
+class WeightsMutation : Mutation() {
 
     override fun mutate(genome: Genome) {
         val rand = ThreadLocalRandom.current()

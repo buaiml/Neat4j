@@ -19,7 +19,7 @@ class NeatPrinter(
     /**
      * Returns the average number of hidden nodes and connections in all clients.
      *
-     * This method takes [Neat.Parameters.fullNetwork] into account, removing the
+     * This method takes [Parameters.isFullNetwork] into account, removing the
      * number of connections that are added by default. This way, you can see the
      * number of innovations made due to the evolution process.
      */
@@ -46,8 +46,9 @@ class NeatPrinter(
         return table {
             header("Species", "Clients", "Score", "Nodes", "Connections", "Staleness")
             for (species in neat.allSpecies) {
-                val (nodes, connections, score) = averages(species.clients)
-                row("#${species.id}", species.clients.size, score, nodes, connections, species.staleness)
+                val clients = species.clientIds.map { neat.clients[it] }
+                val (nodes, connections, score) = averages(clients)
+                row("#${species.id}", clients.size, score, nodes, connections, species.staleness)
             }
 
             val (nodes, connections, score) = averages()

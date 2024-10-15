@@ -8,6 +8,11 @@ import com.cjcrafter.neat.mutate.AddNodeMutation
 import com.cjcrafter.neat.mutate.Mutation
 import com.cjcrafter.neat.mutate.WeightsMutation
 import com.cjcrafter.neat.util.ProbabilityMap
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.module.kotlin.KotlinFeature
+import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import org.joml.Vector2f
 import java.util.ArrayList
 import java.util.LinkedList
@@ -20,11 +25,12 @@ class NeatImpl(
     override var countClients: Int,
     override val parameters: Parameters = Parameters(),
 ) : Neat {
-    override val speciesDistanceFactor = SpeciesDistanceFactor(parameters.speciesDistance).apply { neat = this@NeatImpl }
+    override var speciesDistanceFactor = SpeciesDistanceFactor(parameters.speciesDistance).apply { neat = this@NeatImpl }
     override var generationNumber: Int = 0
 
     // The "config options" and parameters of this NEAT instance
-    override val mutations: List<Mutation> = listOf(
+    @JsonIgnore
+    override var mutations: List<Mutation> = listOf(
         AddConnectionMutation().apply { neat = this@NeatImpl },
         AddNodeMutation().apply { neat = this@NeatImpl },
         WeightsMutation().apply { neat = this@NeatImpl },
@@ -32,13 +38,13 @@ class NeatImpl(
 
     // Cache these genes to prevent creating duplicates... We share these genes
     // between different genomes by cloning them when needed.
-    val connectionCache: MutableMap<ConnectionGene, ConnectionGene> = mutableMapOf()
-    val nodeCache: MutableList<NodeGene> = mutableListOf()
-    val replacements: MutableMap<ConnectionGene, Int> = mutableMapOf()
+    var connectionCache: MutableMap<ConnectionGene, ConnectionGene> = mutableMapOf()
+    var nodeCache: MutableList<NodeGene> = mutableListOf()
+    var replacements: MutableMap<ConnectionGene, Int> = mutableMapOf()
 
     // The clients that are managed by this NEAT instance
     override var clients: List<Client>
-    override val allSpecies: MutableList<Species> = mutableListOf()
+    override var allSpecies: MutableList<Species> = mutableListOf()
     private var speciesCounter = 0
 
     init {
@@ -225,7 +231,7 @@ class NeatImpl(
         for (client in clients) {
 
             // when this is true, this client is the base client for some species
-            if (client.species != null)
+            if (client.speciesId != null)
                 continue
 
             // Try to sort the client into one of the existing species
@@ -239,7 +245,8 @@ class NeatImpl(
 
             // When no species match this client, create a new one!
             if (!isFoundMatchingSpecies) {
-                val species = Species(speciesCounter++, client).apply { neat = this@NeatImpl }
+                val species = Species(speciesCounter++, client.id).apply { neat = this@NeatImpl }
+                client.speciesId = species.id
                 allSpecies.add(species)
             }
         }
@@ -260,7 +267,7 @@ class NeatImpl(
 
             // If all clients in the species are dead, then we should remove
             // the species (and clear the species of the clients that were in it)
-            if (species.clients.isEmpty()) {
+            if (species.clientIds.isEmpty()) {
                 species.extirpate()
                 iterator.remove()
             }
@@ -269,7 +276,8 @@ class NeatImpl(
         // If all species were killed off, then we should create a new species
         if (allSpecies.isEmpty()) {
             val baseClient = clients[ThreadLocalRandom.current().nextInt(clients.size)]
-            val species = Species(speciesCounter++, baseClient).apply { neat = this@NeatImpl }
+            val species = Species(speciesCounter++, baseClient.id).apply { neat = this@NeatImpl }
+            baseClient.speciesId = species.id
             species.evaluate()  // Have a non-zero score
             allSpecies.add(species)
         }
@@ -281,7 +289,12 @@ class NeatImpl(
         allSpecies.forEach { probabilityMap[it] = it.score }
         val eliteClients = LinkedList<Client>()
         for (client in clients) {
-            val species = client.species
+            val species = this.allSpecies.find { species: Species -> species.id == client.speciesId }
+
+            // Should never happen
+            if (species == null && client.speciesId != null) {
+                throw IllegalStateException("Found a member from an extinct species")
+            }
 
             // For interspecies mating, we should take random genomes from
             // random species and breed them together. Since the resulting
@@ -292,7 +305,8 @@ class NeatImpl(
 
                 if (a != null && b != null) {
                     client.genome = a % b
-                    val species = Species(speciesCounter++, client).apply { neat = this@NeatImpl }
+                    val species = Species(speciesCounter++, client.id).apply { neat = this@NeatImpl }
+                    client.speciesId = species.id
                     species.evaluate()
                     allSpecies.add(species)
                 }
@@ -315,10 +329,74 @@ class NeatImpl(
         // Elitism: Keep the best performing client in each species
         // But as the species gets more stale, we should mutate them
         for (elite in eliteClients) {
-            val staleness = elite.species!!.getStaleRate()
+            val species = this.allSpecies.find { species: Species -> species.id == elite.speciesId }
+
+            // Should never happen
+            if (species == null) {
+                throw IllegalStateException("Found a member from an extinct species")
+            }
+
+            val staleness = species.getStaleRate()
             if (staleness > ThreadLocalRandom.current().nextFloat()) {
                 elite.mutate()
             }
+        }
+    }
+
+    override fun serialize(): String {
+        val mapper = jacksonObjectMapper()
+        mapper.registerModule(KotlinModule.Builder().configure(KotlinFeature.NullIsSameAsDefault, true).build())
+        return mapper.writeValueAsString(this)
+    }
+
+    companion object {
+        @JvmStatic
+        fun fromJson(json: String): NeatImpl {
+            val mapper = jacksonObjectMapper()
+            val dto: NeatDTO = mapper.readValue(json)
+            val neat = NeatImpl(dto.countInputNodes, dto.countOutputNodes, dto.countClients, dto.parameters)
+
+            // Copy the data from the DTO to the NEAT instance
+            neat.speciesDistanceFactor = dto.speciesDistanceFactor
+            neat.generationNumber = dto.generationNumber
+            neat.connectionCache = dto.connectionCache.toMutableMap()
+            neat.nodeCache = dto.nodeCache.toMutableList()
+            neat.replacements = dto.replacements.toMutableMap()
+            neat.clients = dto.clients
+            neat.allSpecies = dto.allSpecies.toMutableList()
+            neat.speciesCounter = dto.speciesCounter
+
+            // Update caches to use the proper Neat instance
+            for ((key, value) in neat.connectionCache) {
+                key.neat = neat
+                value.neat = neat
+            }
+            for (node in neat.nodeCache) {
+                node.neat = neat
+            }
+            for ((key, _) in neat.replacements) {
+                key.neat = neat
+            }
+
+            // Update clients to use the proper Neat instance
+            for (client in neat.clients) {
+                client.neat = neat
+                client.genome.neat = neat
+
+                for (connection in client.genome.connections) {
+                    connection.neat = neat
+                }
+                for (node in client.genome.nodes) {
+                    node.neat = neat
+                }
+            }
+
+            // Update species to use the proper Neat instance
+            for (species in neat.allSpecies) {
+                species.neat = neat
+            }
+
+            return neat
         }
     }
 }

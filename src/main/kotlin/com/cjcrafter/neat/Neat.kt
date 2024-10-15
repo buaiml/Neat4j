@@ -5,7 +5,7 @@ import com.cjcrafter.neat.genome.Genome
 import com.cjcrafter.neat.genome.NodeGene
 import com.cjcrafter.neat.mutate.Mutation
 
-interface Neat : ClientHolder {
+interface Neat {
 
     /**
      * The number of input nodes in the neural network.
@@ -48,7 +48,9 @@ interface Neat : ClientHolder {
     /**
      * Returns the list of mutations that can be applied to a genome.
      */
-    val mutations: List<Mutation>
+    var mutations: List<Mutation>
+
+    val clients: List<Client>
 
     val allSpecies: List<Species>
 
@@ -77,4 +79,6 @@ interface Neat : ClientHolder {
     fun getOrCreateReplacementNode(connection: ConnectionGene): NodeGene
 
     fun evolve()
+
+    fun serialize(): String
 }

@@ -1,19 +1,12 @@
 package com.cjcrafter.neat.mutate
 
-import com.cjcrafter.neat.Neat
 import com.cjcrafter.neat.genome.Genome
-import com.fasterxml.jackson.annotation.JsonIgnore
 import java.util.concurrent.ThreadLocalRandom
 
 /**
  * This mutation adds a connection between 2 nodes.
- *
- * @property neat The [Neat] instance managing this object.
  */
-class AddConnectionMutation: Mutation {
-
-    @JsonIgnore
-    override lateinit var neat: Neat
+class AddConnectionMutation: Mutation() {
 
     override fun mutate(genome: Genome) {
         // chance to trigger
