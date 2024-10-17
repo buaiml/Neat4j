@@ -12,3 +12,7 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+# Unit Tests
+xor-performance
+serialize

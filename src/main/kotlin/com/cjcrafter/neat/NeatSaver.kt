@@ -17,6 +17,14 @@ class NeatSaver(
     val neat: Neat,
     var saveFolder: File,
 ) {
+
+    init {
+        // We have to make sure that the save folder exists
+        if (!saveFolder.exists()) {
+            saveFolder.mkdirs()
+        }
+    }
+
     /**
      * Saves the current generation of the NEAT instance to disk. This will save
      * the entire NEAT instance, including all clients and species. This will also
@@ -25,9 +33,11 @@ class NeatSaver(
     fun save() {
         val neatJson = neat.serialize()
         val neatFile = File(saveFolder, "generation-${neat.generationNumber}.json")
+        neatFile.createNewFile()
         neatFile.writeText(neatJson)
 
         val bestClientFile = File(saveFolder, "best-client-${neat.generationNumber}.json")
+        bestClientFile.createNewFile()
         val bestClient = neat.clients.maxByOrNull { it.score }!!
         val mapper = fatObjectMapper()
         val bestClientJson = mapper.writeValueAsString(bestClient)

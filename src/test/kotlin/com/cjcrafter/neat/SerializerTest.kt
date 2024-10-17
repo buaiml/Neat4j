@@ -2,12 +2,13 @@ package com.cjcrafter.neat
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.junit.jupiter.api.Test
+import java.io.File
 import kotlin.test.assertEquals
 
 class SerializerTest {
 
     @Test
-    fun testSerializeSameOutputs() {
+    fun test_serializeSameOutputs() {
         // We expect these 2 json strings to be the same
         val neat = XorUtil.createNeat()
         val json1 = neat.serialize()
@@ -17,7 +18,7 @@ class SerializerTest {
     }
 
     @Test
-    fun testSerializeDeserialize() {
+    fun test_serializeDeserialize() {
         // Starting from the same NEAT instance, then flip-flop
         val neat = XorUtil.createNeat()
         val json1 = neat.serialize()
@@ -33,7 +34,7 @@ class SerializerTest {
     }
 
     @Test
-    fun testSerializeAfterEvolution() {
+    fun test_serializeAfterEvolution() {
         // Evolve the NEAT instance, then serialize
         val neat = XorUtil.createNeat()
         for (i in 0 until 100) {
@@ -46,7 +47,7 @@ class SerializerTest {
     }
 
     @Test
-    fun testDeserialize() {
+    fun test_deserialize() {
         val json1 = javaClass.getResource("/example_neat.json")?.readText() ?: throw IllegalStateException("Could not read file")
         val neat = NeatImpl.fromJson(json1)
 
@@ -59,5 +60,22 @@ class SerializerTest {
         val obj1 = mapper.readValue(json1, Map::class.java)
         val obj2 = mapper.readValue(json2, Map::class.java)
         assertEquals(obj1, obj2)
+    }
+
+    @Test
+    fun test_neatSaver() {
+        val neat = XorUtil.createNeat()
+        val saver = NeatSaver(neat, File("serialize"))
+
+        // Clean up the folder
+        saver.saveFolder.deleteRecursively()
+        saver.saveFolder.mkdirs()
+
+        // Try to save each generation to file
+        saver.save()
+        for (i in 0 until 10) {
+            neat.evolve()
+            saver.save()
+        }
     }
 }
