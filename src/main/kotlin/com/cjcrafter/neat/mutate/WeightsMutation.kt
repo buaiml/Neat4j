@@ -23,9 +23,8 @@ class WeightsMutation : Mutation() {
         val rand = ThreadLocalRandom.current()
 
         // Chance to trigger the weight mutation in the first place
-        if (rand.nextFloat() < neat.parameters.mutateWeightChance) {
+        if (rand.nextFloat() >= neat.parameters.mutateWeightChance)
             return
-        }
 
         // Each connection has a chance to be mutated
         for (connection in genome.connections) {
