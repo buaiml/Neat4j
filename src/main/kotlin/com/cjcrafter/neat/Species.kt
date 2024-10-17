@@ -24,7 +24,7 @@ class Species(
 
     val clientIds: MutableList<Int> = mutableListOf()
 
-    var champion: Client? = null
+    var championId: Int? = null
     var score = 0.0
     var generations = 0
     var isExtinct = false
@@ -41,6 +41,12 @@ class Species(
         @JsonIgnore
         set(value) { baseId = value.id }
 
+    var champion: Client?
+        @JsonIgnore
+        get() = championId?.let { neat.clients[it] }
+        @JsonIgnore
+        set(value) { championId = value?.id }
+
     init {
         clientIds.add(baseId)
     }
@@ -48,6 +54,7 @@ class Species(
     /**
      * Returns true if the species has not improved over a couple generations.
      */
+    @JsonIgnore
     fun isStale(): Boolean {
         return staleness >= neat.parameters.stagnationLimit
     }
@@ -57,6 +64,7 @@ class Species(
      * value of 0 means that the species is not stale, while a value of 1 means
      * that the species is very stale.
      */
+    @JsonIgnore
     fun getStaleRate(): Float {
         val limit = neat.parameters.stagnationLimit
         return (staleness.toFloat() / limit)
@@ -122,8 +130,8 @@ class Species(
             score += client.score
 
             // Keep track of the best client in this species
-            if (champion == null || client.score > champion!!.score) {
-                champion = client
+            if (championId == null || client.score > champion!!.score) {
+                championId = client.id
             }
         }
 
@@ -148,16 +156,33 @@ class Species(
      */
     fun reset(overrideBase: Client? = null) {
         score = 0.0
-        champion = null
-
-        // Use some random client as the new base
-        base = overrideBase ?: (random() ?: base)
-        champion = base
+        championId = null
 
         // Remove all current clients from the species (many will be resorted
         // back into this species by the managing Neat instance)
-        clientIds.forEach { neat.clients[it].speciesId = null }
+        val potentialNewBase = mutableListOf<Client>()
+        for (clientId in clientIds) {
+
+            // This check is *ONLY* for Neat#updateClients(Int). When the number
+            // of clients is reduced, we do not need to update those "already
+            // removed" clients.
+            if (neat.clients.size <= clientId)
+                continue
+
+            neat.clients[clientId].speciesId = null
+            potentialNewBase.add(neat.clients[clientId])
+        }
         clientIds.clear()
+
+        // Happens if all clients are removed from Neat#updateClients(Int)
+        if (potentialNewBase.isEmpty()) {
+            extirpate()
+            return
+        }
+
+        // Use some random client as the new base
+        base = overrideBase ?: potentialNewBase[ThreadLocalRandom.current().nextInt(potentialNewBase.size)]
+        championId = base.id
 
         // Add the new base client back in
         put(base, true)

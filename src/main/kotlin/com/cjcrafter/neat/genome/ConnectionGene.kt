@@ -22,6 +22,7 @@ class ConnectionGene(
     var fromId: Int,
     var toId: Int,
 ): Gene, Cloneable {
+    @JsonIgnore
     override val type = Gene.Type.CONNECTION
     var isBiasConnection = false
 
@@ -37,7 +38,7 @@ class ConnectionGene(
         set(value) {
             if (value.isNaN() || value.isInfinite())
                 throw IllegalArgumentException("Invalid weight: $value")
-            field = value.coerceIn(neat.parameters.minWeight, neat.parameters.maxWeight)
+            field = value//.coerceIn(neat.parameters.minWeight, neat.parameters.maxWeight)
         }
 
     /**
@@ -66,7 +67,6 @@ class ConnectionGene(
 
         other as ConnectionGene
 
-        if (neat != other.neat) throw IllegalArgumentException("Cannot compare genes of different Neat instances")
         if (fromId != other.fromId) return false
         if (toId != other.toId) return false
 

@@ -7,14 +7,19 @@ import com.cjcrafter.neat.mutate.AddConnectionMutation
 import com.cjcrafter.neat.mutate.AddNodeMutation
 import com.cjcrafter.neat.mutate.Mutation
 import com.cjcrafter.neat.mutate.WeightsMutation
+import com.cjcrafter.neat.serialize.Vector2fDeserializer
+import com.cjcrafter.neat.serialize.Vector2fSerializer
 import com.cjcrafter.neat.util.ProbabilityMap
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.fasterxml.jackson.module.kotlin.addDeserializer
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.joml.Vector2f
 import java.util.ArrayList
+import java.util.LinkedHashSet
 import java.util.LinkedList
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.math.min
@@ -38,9 +43,9 @@ class NeatImpl(
 
     // Cache these genes to prevent creating duplicates... We share these genes
     // between different genomes by cloning them when needed.
-    var connectionCache: MutableMap<ConnectionGene, ConnectionGene> = mutableMapOf()
+    var connectionCache: MutableMap<ConnectionGene, ConnectionGene> = LinkedHashMap()
     var nodeCache: MutableList<NodeGene> = mutableListOf()
-    var replacements: MutableMap<ConnectionGene, Int> = mutableMapOf()
+    var replacements: MutableMap<Int, Int> = LinkedHashMap()
 
     // The clients that are managed by this NEAT instance
     override var clients: List<Client>
@@ -132,7 +137,14 @@ class NeatImpl(
                 newClients.add(Client(i, createGenome()).apply { neat = this@NeatImpl })
             }
         }
+
+        // Help the garbage collector by removing the old clients
+        for (i in countClients until clients.size) {
+            clients[i].speciesId = null
+        }
+
         clients = newClients
+        this.countClients = clients.size
         sortClientsIntoSpecies()
     }
 
@@ -193,10 +205,10 @@ class NeatImpl(
     }
 
     override fun getOrCreateReplacementNode(connection: ConnectionGene): NodeGene {
-        val nodeId: Int? = replacements[connection]
+        val nodeId: Int? = replacements[connection.id]
         if (nodeId == null) {
             val node = createNode()
-            replacements[connection] = node.id
+            replacements[connection.id] = node.id
 
             // Calculate the midpoint of the 2 nodes
             val from: NodeGene = getNode(connection.fromId)
@@ -346,22 +358,51 @@ class NeatImpl(
     override fun serialize(): String {
         val mapper = jacksonObjectMapper()
         mapper.registerModule(KotlinModule.Builder().configure(KotlinFeature.NullIsSameAsDefault, true).build())
-        return mapper.writeValueAsString(this)
+
+        val module = SimpleModule()
+        module.addSerializer(Vector2f::class.java, Vector2fSerializer())
+        mapper.registerModule(module)
+
+        // Using the DTO to serialize is redundant, biggest thing is the connection cache.
+        // we need to be able to map objects to objects here, so the DTO simplifies that
+        val neatDTO = NeatDTO(
+            countInputNodes=countInputNodes,
+            countOutputNodes=countOutputNodes,
+            countClients=countClients,
+            parameters=parameters,
+            speciesDistanceFactor=speciesDistanceFactor,
+            generationNumber=generationNumber,
+            connectionCache= LinkedHashSet(connectionCache.keys),  // special line here... cannot map objects to objects
+            nodeCache=nodeCache,
+            replacements=LinkedHashMap(replacements),
+            clients=clients,
+            allSpecies=allSpecies,
+            speciesCounter=speciesCounter,
+        )
+
+        return mapper.writeValueAsString(neatDTO)
     }
 
     companion object {
         @JvmStatic
         fun fromJson(json: String): NeatImpl {
             val mapper = jacksonObjectMapper()
+            val module = SimpleModule()
+            module.addDeserializer(Vector2f::class.java, Vector2fDeserializer())
+            mapper.registerModule(module)
+
             val dto: NeatDTO = mapper.readValue(json)
             val neat = NeatImpl(dto.countInputNodes, dto.countOutputNodes, dto.countClients, dto.parameters)
 
             // Copy the data from the DTO to the NEAT instance
+            neat.countInputNodes = dto.countInputNodes
+            neat.countOutputNodes = dto.countOutputNodes
+            neat.countClients = dto.countClients
             neat.speciesDistanceFactor = dto.speciesDistanceFactor
             neat.generationNumber = dto.generationNumber
-            neat.connectionCache = dto.connectionCache.toMutableMap()
+            neat.connectionCache = LinkedHashMap(dto.connectionCache.associateBy { it })
             neat.nodeCache = dto.nodeCache.toMutableList()
-            neat.replacements = dto.replacements.toMutableMap()
+            neat.replacements = dto.replacements
             neat.clients = dto.clients
             neat.allSpecies = dto.allSpecies.toMutableList()
             neat.speciesCounter = dto.speciesCounter
@@ -373,9 +414,6 @@ class NeatImpl(
             }
             for (node in neat.nodeCache) {
                 node.neat = neat
-            }
-            for ((key, _) in neat.replacements) {
-                key.neat = neat
             }
 
             // Update clients to use the proper Neat instance
