@@ -392,6 +392,9 @@ class NeatImpl(
             neat.allSpecies = dto.allSpecies.toMutableList()
             neat.speciesCounter = dto.speciesCounter
 
+            // Update speciesDistanceFactor to use the proper Neat instance
+            neat.speciesDistanceFactor.neat = neat
+
             // Update caches to use the proper Neat instance
             for ((key, value) in neat.connectionCache) {
                 key.neat = neat
