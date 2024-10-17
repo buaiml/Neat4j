@@ -1,6 +1,6 @@
 package com.cjcrafter.neat
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.cjcrafter.neat.serialize.fatObjectMapper
 import java.io.File
 
 /**
@@ -17,6 +17,11 @@ class NeatSaver(
     val neat: Neat,
     var saveFolder: File,
 ) {
+    /**
+     * Saves the current generation of the NEAT instance to disk. This will save
+     * the entire NEAT instance, including all clients and species. This will also
+     * save the best client of the generation (separately, for easy access).
+     */
     fun save() {
         val neatJson = neat.serialize()
         val neatFile = File(saveFolder, "generation-${neat.generationNumber}.json")
@@ -24,7 +29,7 @@ class NeatSaver(
 
         val bestClientFile = File(saveFolder, "best-client-${neat.generationNumber}.json")
         val bestClient = neat.clients.maxByOrNull { it.score }!!
-        val mapper = jacksonObjectMapper()
+        val mapper = fatObjectMapper()
         val bestClientJson = mapper.writeValueAsString(bestClient)
         bestClientFile.writeText(bestClientJson)
     }

@@ -7,22 +7,15 @@ import com.cjcrafter.neat.mutate.AddConnectionMutation
 import com.cjcrafter.neat.mutate.AddNodeMutation
 import com.cjcrafter.neat.mutate.Mutation
 import com.cjcrafter.neat.mutate.WeightsMutation
-import com.cjcrafter.neat.serialize.Vector2fDeserializer
-import com.cjcrafter.neat.serialize.Vector2fSerializer
+import com.cjcrafter.neat.serialize.fatObjectMapper
 import com.cjcrafter.neat.util.ProbabilityMap
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.databind.module.SimpleModule
-import com.fasterxml.jackson.module.kotlin.KotlinFeature
-import com.fasterxml.jackson.module.kotlin.KotlinModule
-import com.fasterxml.jackson.module.kotlin.addDeserializer
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.joml.Vector2f
 import java.util.ArrayList
 import java.util.LinkedHashSet
 import java.util.LinkedList
 import java.util.concurrent.ThreadLocalRandom
-import kotlin.math.min
 
 class NeatImpl(
     override var countInputNodes: Int,
@@ -356,12 +349,7 @@ class NeatImpl(
     }
 
     override fun serialize(): String {
-        val mapper = jacksonObjectMapper()
-        mapper.registerModule(KotlinModule.Builder().configure(KotlinFeature.NullIsSameAsDefault, true).build())
-
-        val module = SimpleModule()
-        module.addSerializer(Vector2f::class.java, Vector2fSerializer())
-        mapper.registerModule(module)
+        val mapper = fatObjectMapper()
 
         // Using the DTO to serialize is redundant, biggest thing is the connection cache.
         // we need to be able to map objects to objects here, so the DTO simplifies that
@@ -386,10 +374,7 @@ class NeatImpl(
     companion object {
         @JvmStatic
         fun fromJson(json: String): NeatImpl {
-            val mapper = jacksonObjectMapper()
-            val module = SimpleModule()
-            module.addDeserializer(Vector2f::class.java, Vector2fDeserializer())
-            mapper.registerModule(module)
+            val mapper = fatObjectMapper()
 
             val dto: NeatDTO = mapper.readValue(json)
             val neat = NeatImpl(dto.countInputNodes, dto.countOutputNodes, dto.countClients, dto.parameters)
