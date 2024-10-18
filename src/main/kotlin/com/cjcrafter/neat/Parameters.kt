@@ -29,7 +29,7 @@ class Parameters @JvmOverloads constructor(
     var speciesDistance: Float = 3.0f,
     var mutateWeightChance: Float = 0.8f,
     var mutateWeightShiftChance: Float = 0.9f,
-    var mutateWeightShiftStrength: Float = 0.15f,
+    var mutateWeightShiftStrength: Float = 2.5f,
     var mutateWeightRandomizeStrength: Float = 1.0f,
     var mutateAddNodeChance: Float = 0.03f,
     var mutateAddConnectionChance: Float = 0.05f,
@@ -39,5 +39,5 @@ class Parameters @JvmOverloads constructor(
     var stagnationLimit: Int = 15,
     var minWeight: Float = -30.0f,
     var maxWeight: Float = 30.0f,
-    var targetSpeciesCount: Int = 10,
+    var targetClientsPerSpecies: Int = 12,
 )

@@ -226,13 +226,12 @@ class NeatImpl(
      * function, a client's genome may no longer match the species. This
      * method will reset all clients' species.
      */
-    private fun sortClientsIntoSpecies() {
+    override fun sortClientsIntoSpecies() {
         // Remove all clients from their species
         for (species in allSpecies) {
             species.reset()
         }
 
-        speciesDistanceFactor.update()
         for (client in clients) {
 
             // when this is true, this client is the base client for some species
@@ -260,6 +259,7 @@ class NeatImpl(
     override fun evolve() {
         // once we have changed the clients, we have to sort them into their
         // matching species (or create new ones to match!)
+        speciesDistanceFactor.update()
         sortClientsIntoSpecies()
         generationNumber++
 

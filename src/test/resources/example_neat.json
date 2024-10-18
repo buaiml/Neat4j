@@ -20,12 +20,10 @@
     "interspeciesMatingRate": 0.001,
     "stagnationLimit": 5,
     "minWeight": -30.0,
-    "maxWeight": 30.0,
-    "targetSpeciesCount": 10
+    "maxWeight": 30.0
   },
   "speciesDistanceFactor": {
-    "speciesDistance": 0.7183518,
-    "velocity": -3.567414
+    "speciesDistance": 0.7183518
   },
   "generationNumber": 100,
   "connectionCache": [

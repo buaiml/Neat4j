@@ -78,6 +78,8 @@ interface Neat {
      */
     fun getOrCreateReplacementNode(connection: ConnectionGene): NodeGene
 
+    fun sortClientsIntoSpecies()
+
     fun evolve()
 
     fun serialize(): String

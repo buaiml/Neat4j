@@ -16,7 +16,8 @@ class SpeciesDistanceFactor(
         val min = 0.1f
         val max = neat.parameters.speciesDistance * 2.0f
 
-        val delta = neat.parameters.targetSpeciesCount - neat.allSpecies.size
+        val targetSpeciesCount = neat.countClients / neat.parameters.targetClientsPerSpecies
+        val delta = targetSpeciesCount - neat.allSpecies.size
         if (delta == 0)
             return
 
@@ -39,7 +40,7 @@ class SpeciesDistanceFactor(
         speciesDistance = smoothDamp(
             speciesDistance,
             target,
-            0.008f * neat.parameters.targetSpeciesCount,
+            0.008f * targetSpeciesCount,
             deltaTime,
             0.25f / deltaTime,
         )

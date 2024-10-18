@@ -33,7 +33,7 @@ class WeightsMutation : Mutation() {
     }
 
     private fun mutateOne(random: ThreadLocalRandom, connection: ConnectionGene) {
-        if (random.nextFloat() < neat.parameters.mutateWeightShiftChance) {
+        if (random.nextFloat() >= neat.parameters.mutateWeightShiftChance) {
             connection.weight += random.nextGaussian().toFloat() * neat.parameters.mutateWeightShiftStrength
         } else {
             connection.weight = random.nextGaussian().toFloat() * neat.parameters.mutateWeightRandomizeStrength
