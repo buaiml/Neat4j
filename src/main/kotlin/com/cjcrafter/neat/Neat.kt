@@ -4,6 +4,7 @@ import com.cjcrafter.neat.genome.ConnectionGene
 import com.cjcrafter.neat.genome.Genome
 import com.cjcrafter.neat.genome.NodeGene
 import com.cjcrafter.neat.mutate.Mutation
+import java.util.Random
 
 interface Neat {
 
@@ -32,6 +33,11 @@ interface Neat {
      * Returns the parameters of this NEAT instance.
      */
     val parameters: Parameters
+
+    /**
+     * Returns the random number generator of this NEAT instance.
+     */
+    val random: Random
 
     /**
      * Returns the species distance factor of this NEAT instance.

@@ -2,13 +2,14 @@ package com.cjcrafter.neat
 
 import com.cjcrafter.neat.util.ProbabilityMap
 import org.junit.jupiter.api.Test
+import java.util.*
 import kotlin.test.assertEquals
 
 class ProbabilityTest {
 
     @Test
     fun testProbabilityMap() {
-        val map = ProbabilityMap<Int>()
+        val map = ProbabilityMap<Int>(SplittableRandom())
         map[1] = 0.5
         map[2] = 0.25
         map[3] = 0.25

@@ -77,5 +77,8 @@ class SerializerTest {
             neat.evolve()
             saver.save()
         }
+
+        // Clean up the folder again
+        saver.saveFolder.deleteRecursively()
     }
 }

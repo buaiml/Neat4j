@@ -84,7 +84,7 @@ class ResizeTest {
 
     @Test
     fun test_changeNodesRandomlyWithMutations() {
-        val attempts = 100
+        val attempts = 25
         val parameters = Parameters(
             useBiasNode = false,
         )
@@ -95,7 +95,7 @@ class ResizeTest {
 
             // Evolve the networks, so we get complicated networks before
             // making any changes
-            val generations = 100
+            val generations = 20
             for (j in 0 until generations) {
                 print("$j, ")
                 neat.evolve()

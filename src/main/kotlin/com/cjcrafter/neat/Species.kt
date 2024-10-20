@@ -2,7 +2,6 @@ package com.cjcrafter.neat
 
 import com.cjcrafter.neat.genome.Genome
 import com.fasterxml.jackson.annotation.JsonIgnore
-import java.util.concurrent.ThreadLocalRandom
 import kotlin.math.roundToInt
 
 /**
@@ -77,7 +76,7 @@ class Species(
         if (clientIds.isEmpty())
             return null
 
-        val index = ThreadLocalRandom.current().nextInt(clientIds.size)
+        val index = neat.random.nextInt(clientIds.size)
         return neat.clients[clientIds[index]]
     }
 
@@ -177,7 +176,7 @@ class Species(
         }
 
         // Use some random client as the new base
-        base = overrideBase ?: potentialNewBase[ThreadLocalRandom.current().nextInt(potentialNewBase.size)]
+        base = overrideBase ?: potentialNewBase[neat.random.nextInt(potentialNewBase.size)]
         championId = base.id
 
         // Add the new base client back in

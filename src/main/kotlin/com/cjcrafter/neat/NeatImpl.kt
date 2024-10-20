@@ -9,13 +9,12 @@ import com.cjcrafter.neat.mutate.Mutation
 import com.cjcrafter.neat.mutate.WeightsMutation
 import com.cjcrafter.neat.serialize.fatObjectMapper
 import com.cjcrafter.neat.util.ProbabilityMap
+import com.cjcrafter.neat.util.chance
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.joml.Vector2f
-import java.util.ArrayList
-import java.util.LinkedHashSet
-import java.util.LinkedList
-import java.util.concurrent.ThreadLocalRandom
+import java.util.*
+import kotlin.collections.LinkedHashMap
 
 class NeatImpl(
     override var countInputNodes: Int,
@@ -23,6 +22,7 @@ class NeatImpl(
     override var countClients: Int,
     override val parameters: Parameters = Parameters(),
 ) : Neat {
+    override val random: Random = Random()
     override var speciesDistanceFactor = SpeciesDistanceFactor(parameters.speciesDistance).apply { neat = this@NeatImpl }
     override var generationNumber: Int = 0
 
@@ -155,7 +155,7 @@ class NeatImpl(
             for (input in 0 until countInputNodes) {
                 for (output in countInputNodes until countInputNodes + countOutputNodes) {
                     val connection = createConnection(input, output)
-                    connection.weight = ThreadLocalRandom.current().nextGaussian().toFloat()
+                    connection.weight = random.nextGaussian().toFloat()
                     genome.connections.add(connection)
                 }
             }
@@ -210,7 +210,7 @@ class NeatImpl(
 
             // Jitter the position vertically, so that the connections won't
             // overlap significantly. This is ONLY important for visualization.
-            midpoint.y += ThreadLocalRandom.current().nextFloat() * 0.1f - 0.05f
+            midpoint.y += random.nextFloat() * 0.1f - 0.05f
 
             node.position = midpoint
             return node
@@ -280,7 +280,7 @@ class NeatImpl(
 
         // If all species were killed off, then we should create a new species
         if (allSpecies.isEmpty()) {
-            val baseClient = clients[ThreadLocalRandom.current().nextInt(clients.size)]
+            val baseClient = clients[random.nextInt(clients.size)]
             val species = Species(speciesCounter++, baseClient.id).apply { neat = this@NeatImpl }
             baseClient.speciesId = species.id
             species.evaluate()  // Have a non-zero score
@@ -302,7 +302,7 @@ class NeatImpl(
         }
 
         // Species with a higher score get a higher chance of breeding
-        val probabilityMap = ProbabilityMap<Species>()
+        val probabilityMap = ProbabilityMap<Species>(SplittableRandom(random.nextLong()))
         allSpecies.forEach { probabilityMap[it] = it.score }
         val eliteClients = LinkedList<Client>()
         for (client in clients) {
@@ -316,7 +316,7 @@ class NeatImpl(
             // For interspecies mating, we should take random genomes from
             // random species and breed them together. Since the resulting
             // genome will probably be WEIRD and BAD, create a new species.
-            if (species == null && parameters.interspeciesMatingRate > ThreadLocalRandom.current().nextFloat()) {
+            if (species == null && random.chance(parameters.interspeciesMatingRate)) {
                 val a = probabilityMap.get().random()?.genome
                 val b = probabilityMap.get().random()?.genome
 
@@ -354,7 +354,7 @@ class NeatImpl(
             }
 
             val staleness = species.getStaleRate()
-            if (staleness > ThreadLocalRandom.current().nextFloat()) {
+            if (random.chance(1f - staleness.coerceAtMost(0.95f))) {
                 elite.mutate()
             }
         }

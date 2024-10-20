@@ -28,7 +28,7 @@ class XorPerformance {
     }
 
     suspend fun testXorPerformance() = coroutineScope {
-        val trials = 100
+        val trials = 150
         val channel = Channel<Int>()
         val results = mutableListOf<Int>()
 
