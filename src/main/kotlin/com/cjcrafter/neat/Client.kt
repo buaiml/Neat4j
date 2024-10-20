@@ -24,8 +24,8 @@ class Client(
     var speciesId: Int? = null
 
     private var calculator0: Calculator? = null
-    @get:JsonIgnore
     val calculator: Calculator
+        @JsonIgnore
         get() {
             if (calculator0 == null) {
                 calculator0 = SimpleCalculator(genome)

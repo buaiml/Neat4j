@@ -13,6 +13,14 @@ class SpeciesDistanceFactor(
     var velocity = 0f
 
     fun update() {
+        val attempts = 4
+        for (i in 0 until attempts) {
+            neat.sortClientsIntoSpecies()
+            updateOnce()
+        }
+    }
+
+    fun updateOnce() {
         val min = 0.1f
         val max = neat.parameters.speciesDistance * 2.0f
 

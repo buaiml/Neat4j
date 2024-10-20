@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.cjcrafter"
-version = "0.2.0-SNAPSHOT"
+version = "0.2.1-SNAPSHOT"
 
 val githubOwner = "buaiml"
 val githubRepo = "Neat4j"
