@@ -17,6 +17,9 @@ class ProbabilityMap<E> {
         if (probabilities.find { it.element == element } != null) {
             throw IllegalArgumentException("$element already exists in the probability map")
         }
+        if (probability <= 0) {
+            throw IllegalArgumentException("Probability must be greater than 0")
+        }
 
         val node = Node(element, total, total + probability)
         probabilities.add(node)

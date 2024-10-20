@@ -144,10 +144,6 @@ class Species(
         }
 
         score /= clientIds.size
-
-        // when score is exactly 0, we end up with a species that has no chance
-        // of breeding. We need to make sure that the final score is non-zero.
-        score = score.coerceAtLeast(0.0001)
         generations++
     }
 

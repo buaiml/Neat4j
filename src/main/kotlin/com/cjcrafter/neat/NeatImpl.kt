@@ -287,9 +287,21 @@ class NeatImpl(
             allSpecies.add(species)
         }
 
-        // For each client that died, we need to sort it into a species by
-        // breeding. It has a higher chance of being sorted into a species
-        // with a higher score.
+        // For species with negative scores, we should treat the lowest negative
+        // as 0.1, and then normalize the scores to be positive.
+        val minScore = allSpecies.minOf { it.score }
+        if (minScore <= 0.0) {
+            for (species in allSpecies) {
+                species.score -= minScore
+
+                // If the score is still negative, then we should treat it as 0.1
+                if (species.score < 0.1) {
+                    species.score = 0.1
+                }
+            }
+        }
+
+        // Species with a higher score get a higher chance of breeding
         val probabilityMap = ProbabilityMap<Species>()
         allSpecies.forEach { probabilityMap[it] = it.score }
         val eliteClients = LinkedList<Client>()
