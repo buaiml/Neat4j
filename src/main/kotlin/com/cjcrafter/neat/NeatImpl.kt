@@ -174,7 +174,7 @@ class NeatImpl(
         if (id < 0 || id > nodeCache.size)
             throw IllegalArgumentException("Invalid node id: $id")
         else if (id == nodeCache.size)
-            return createNode()
+            return createNode().clone()
         else
             return nodeCache[id].clone()
     }
@@ -219,7 +219,7 @@ class NeatImpl(
             midpoint.y += random.nextFloat() * 0.1f - 0.05f
 
             node.position = midpoint
-            return node
+            return node.clone()
         } else {
             return getNode(nodeId)
         }

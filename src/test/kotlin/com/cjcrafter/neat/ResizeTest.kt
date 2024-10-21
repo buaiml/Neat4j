@@ -114,4 +114,23 @@ class ResizeTest {
             }
         }
     }
+
+    @Test
+    fun test_resizeWithXor() {
+        val neat = XorUtil.createNeat() as NeatImpl
+        while (!XorUtil.score(neat)) {
+            neat.evolve()
+        }
+
+        // Add a new output node
+        val newInputNodes = 3
+        neat.updateNodeCounts(newInputNodes, 1)
+
+        // Try calculating the XOR function with the new input node
+        // We expect the output to be 0, since the new input node is not connected
+        val input = floatArrayOf(1f, 1f, 1f)
+        for (client in neat.clients) {
+            val output = client.calculator.calculate(input).join()
+        }
+    }
 }
