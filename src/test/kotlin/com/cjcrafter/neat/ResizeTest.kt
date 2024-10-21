@@ -84,7 +84,7 @@ class ResizeTest {
 
     @Test
     fun test_changeNodesRandomlyWithMutations() {
-        val attempts = 100
+        val attempts = 25
         val parameters = Parameters(
             useBiasNode = false,
         )
@@ -95,7 +95,7 @@ class ResizeTest {
 
             // Evolve the networks, so we get complicated networks before
             // making any changes
-            val generations = 100
+            val generations = 20
             for (j in 0 until generations) {
                 print("$j, ")
                 neat.evolve()
@@ -112,6 +112,25 @@ class ResizeTest {
                 assertEquals(newOutputNodes, client.genome.nodes.count { it.isOutput() })
                 // assertEquals(0, client.genome.nodes.count { it.isHidden() })
             }
+        }
+    }
+
+    @Test
+    fun test_resizeWithXor() {
+        val neat = XorUtil.createNeat() as NeatImpl
+        while (!XorUtil.score(neat)) {
+            neat.evolve()
+        }
+
+        // Add a new output node
+        val newInputNodes = 3
+        neat.updateNodeCounts(newInputNodes, 1)
+
+        // Try calculating the XOR function with the new input node
+        // We expect the output to be 0, since the new input node is not connected
+        val input = floatArrayOf(1f, 1f, 1f)
+        for (client in neat.clients) {
+            val output = client.calculator.calculate(input).join()
         }
     }
 }

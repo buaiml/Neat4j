@@ -3,8 +3,7 @@ package com.cjcrafter.neat.genome
 import com.cjcrafter.neat.Neat
 import com.cjcrafter.neat.NeatInstance
 import com.cjcrafter.neat.util.OrderedSet
-import java.util.BitSet
-import java.util.concurrent.ThreadLocalRandom
+import com.fasterxml.jackson.annotation.JsonIgnore
 import kotlin.math.abs
 import kotlin.math.max
 
@@ -15,9 +14,10 @@ import kotlin.math.max
  *
  * @property neat The [Neat] instance managing this object.
  */
-class Genome(
-    override val neat: Neat,
-) : NeatInstance {
+class Genome : NeatInstance {
+
+    @JsonIgnore
+    override lateinit var neat: Neat
 
     var nodes = OrderedSet<NodeGene>()
     var connections = OrderedSet<ConnectionGene>()
@@ -25,13 +25,21 @@ class Genome(
     internal fun updateNodeCounts(oldIdToNewIdCache: IntArray, nodeCache: List<NodeGene>) {
         val newNodes = OrderedSet<NodeGene>()
         for (node in nodeCache) {
-            // copy node over if it is either an input or output node, or if
-            // the node is in the old list
-            if (node.isInput() || node.isOutput() || node in nodes) {
+            // First copy over the important inputs and outputs
+            if (node.isInput() || node.isOutput()) {
                 val newNode = node.clone()
                 newNodes.add(newNode)
             }
         }
+
+        // Now copy over the hidden nodes
+        for (node in nodes) {
+            val replacementId = oldIdToNewIdCache[node.id]
+            val replacementNode = nodeCache[replacementId]
+            val newNode = replacementNode.clone()
+            newNodes.add(newNode)
+        }
+
         nodes = newNodes
 
         for (connection in connections) {

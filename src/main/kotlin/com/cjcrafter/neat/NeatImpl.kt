@@ -7,12 +7,14 @@ import com.cjcrafter.neat.mutate.AddConnectionMutation
 import com.cjcrafter.neat.mutate.AddNodeMutation
 import com.cjcrafter.neat.mutate.Mutation
 import com.cjcrafter.neat.mutate.WeightsMutation
+import com.cjcrafter.neat.serialize.fatObjectMapper
 import com.cjcrafter.neat.util.ProbabilityMap
+import com.cjcrafter.neat.util.chance
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.module.kotlin.readValue
 import org.joml.Vector2f
-import java.util.ArrayList
-import java.util.LinkedList
-import java.util.concurrent.ThreadLocalRandom
-import kotlin.math.min
+import java.util.*
+import kotlin.collections.LinkedHashMap
 
 class NeatImpl(
     override var countInputNodes: Int,
@@ -20,25 +22,27 @@ class NeatImpl(
     override var countClients: Int,
     override val parameters: Parameters = Parameters(),
 ) : Neat {
-    override val speciesDistanceFactor = SpeciesDistanceFactor(this, parameters.speciesDistance)
+    override val random: Random = Random()
+    override var speciesDistanceFactor = SpeciesDistanceFactor(parameters.speciesDistance).apply { neat = this@NeatImpl }
     override var generationNumber: Int = 0
 
     // The "config options" and parameters of this NEAT instance
-    override val mutations: List<Mutation> = listOf(
-        AddConnectionMutation(this),
-        AddNodeMutation(this),
-        WeightsMutation(this),
+    @JsonIgnore
+    override var mutations: List<Mutation> = listOf(
+        AddConnectionMutation().apply { neat = this@NeatImpl },
+        AddNodeMutation().apply { neat = this@NeatImpl },
+        WeightsMutation().apply { neat = this@NeatImpl },
     )
 
     // Cache these genes to prevent creating duplicates... We share these genes
     // between different genomes by cloning them when needed.
-    val connectionCache: MutableMap<ConnectionGene, ConnectionGene> = mutableMapOf()
-    val nodeCache: MutableList<NodeGene> = mutableListOf()
-    val replacements: MutableMap<ConnectionGene, Int> = mutableMapOf()
+    var connectionCache: MutableMap<ConnectionGene, ConnectionGene> = LinkedHashMap()
+    var nodeCache: MutableList<NodeGene> = mutableListOf()
+    var replacements: MutableMap<Int, Int> = LinkedHashMap()
 
     // The clients that are managed by this NEAT instance
     override var clients: List<Client>
-    override val allSpecies: MutableList<Species> = mutableListOf()
+    override var allSpecies: MutableList<Species> = mutableListOf()
     private var speciesCounter = 0
 
     init {
@@ -57,11 +61,17 @@ class NeatImpl(
         }
 
         // Create the default genomes for all the clients
-        clients = List(countClients) { id -> Client(this, id) }
+        clients = List(countClients) { id -> Client(id, createGenome()).apply { neat = this@NeatImpl } }
         sortClientsIntoSpecies()
     }
 
     fun updateNodeCounts(countInputNodes: Int, countOutputNodes: Int) {
+        // When we use a bias node, there is always 1 more node
+        var countInputNodes = countInputNodes
+        if (parameters.useBiasNode) {
+            countInputNodes++;
+        }
+
         if (countInputNodes < this.countInputNodes)
             throw IllegalArgumentException("Cannot reduce the number of input nodes")
         if (countOutputNodes < this.countOutputNodes)
@@ -75,21 +85,21 @@ class NeatImpl(
 
         // Start by inserting new nodes into the cache
         for (i in oldCountInputNodes until countInputNodes) {
-            val newNode = NodeGene(this, i)
+            val newNode = NodeGene(i).apply { neat = this@NeatImpl }
             nodeCache.add(i, newNode)
         }
         for (i in oldCountOutputNodes until countOutputNodes) {
-            val newNode = NodeGene(this, i + countInputNodes)
+            val newNode = NodeGene(i + countInputNodes).apply { neat = this@NeatImpl }
             nodeCache.add(i + countInputNodes, newNode)
         }
 
         // Update the positions of the nodes
         for (i in 0 until countInputNodes) {
-            val node = getNode(i)
+            val node = nodeCache[i]
             node.position = Vector2f(0.1f, (i.toFloat() + 1) / (countInputNodes + 1))
         }
         for (i in 0 until countOutputNodes) {
-            val node = getNode(i + countInputNodes)
+            val node = nodeCache[i + countInputNodes]
             node.position = Vector2f(0.9f, (i.toFloat() + 1) / (countOutputNodes + 1))
         }
 
@@ -123,15 +133,22 @@ class NeatImpl(
             if (i < clients.size) {
                 newClients.add(clients[i])
             } else {
-                newClients.add(Client(this, i))
+                newClients.add(Client(i, createGenome()).apply { neat = this@NeatImpl })
             }
         }
+
+        // Help the garbage collector by removing the old clients
+        for (i in countClients until clients.size) {
+            clients[i].speciesId = null
+        }
+
         clients = newClients
+        this.countClients = clients.size
         sortClientsIntoSpecies()
     }
 
     override fun createGenome(forceEmpty: Boolean): Genome {
-        val genome = Genome(this)
+        val genome = Genome().apply { neat = this@NeatImpl }
 
         // The genome starts out empty, so we need to add all the required nodes
         for (i in 0 until countInputNodes + countOutputNodes) {
@@ -144,7 +161,7 @@ class NeatImpl(
             for (input in 0 until countInputNodes) {
                 for (output in countInputNodes until countInputNodes + countOutputNodes) {
                     val connection = createConnection(input, output)
-                    connection.weight = ThreadLocalRandom.current().nextGaussian().toFloat()
+                    connection.weight = random.nextGaussian().toFloat()
                     genome.connections.add(connection)
                 }
             }
@@ -157,7 +174,7 @@ class NeatImpl(
         if (id < 0 || id > nodeCache.size)
             throw IllegalArgumentException("Invalid node id: $id")
         else if (id == nodeCache.size)
-            return createNode()
+            return createNode().clone()
         else
             return nodeCache[id].clone()
     }
@@ -165,13 +182,13 @@ class NeatImpl(
     override fun createNode(): NodeGene {
         val id = nodeCache.size
         val position = Vector2f()
-        val node = NodeGene(this, id, position)
+        val node = NodeGene(id, position).apply { neat = this@NeatImpl }
         nodeCache.add(node)
         return node
     }
 
     override fun getConnectionOrNull(fromId: Int, toId: Int): ConnectionGene? {
-        val hash = ConnectionGene(this, -1, fromId, toId)
+        val hash = ConnectionGene(-1, fromId, toId).apply { neat = this@NeatImpl }
         return connectionCache[hash]?.clone() // Return a clone to prevent modification
     }
 
@@ -181,16 +198,16 @@ class NeatImpl(
 
         // Create a new connection
         val id = connectionCache.size
-        val connection = ConnectionGene(this, id, fromId, toId)
+        val connection = ConnectionGene(id, fromId, toId).apply { neat = this@NeatImpl }
         connectionCache[connection] = connection
         return connection.clone()
     }
 
     override fun getOrCreateReplacementNode(connection: ConnectionGene): NodeGene {
-        val nodeId: Int? = replacements[connection]
+        val nodeId: Int? = replacements[connection.id]
         if (nodeId == null) {
             val node = createNode()
-            replacements[connection] = node.id
+            replacements[connection.id] = node.id
 
             // Calculate the midpoint of the 2 nodes
             val from: NodeGene = getNode(connection.fromId)
@@ -199,10 +216,10 @@ class NeatImpl(
 
             // Jitter the position vertically, so that the connections won't
             // overlap significantly. This is ONLY important for visualization.
-            midpoint.y += ThreadLocalRandom.current().nextFloat() * 0.1f - 0.05f
+            midpoint.y += random.nextFloat() * 0.1f - 0.05f
 
             node.position = midpoint
-            return node
+            return node.clone()
         } else {
             return getNode(nodeId)
         }
@@ -215,17 +232,16 @@ class NeatImpl(
      * function, a client's genome may no longer match the species. This
      * method will reset all clients' species.
      */
-    private fun sortClientsIntoSpecies() {
+    override fun sortClientsIntoSpecies() {
         // Remove all clients from their species
         for (species in allSpecies) {
             species.reset()
         }
 
-        speciesDistanceFactor.update()
         for (client in clients) {
 
             // when this is true, this client is the base client for some species
-            if (client.species != null)
+            if (client.speciesId != null)
                 continue
 
             // Try to sort the client into one of the existing species
@@ -239,7 +255,8 @@ class NeatImpl(
 
             // When no species match this client, create a new one!
             if (!isFoundMatchingSpecies) {
-                val species = Species(this, speciesCounter++, client)
+                val species = Species(speciesCounter++, client.id).apply { neat = this@NeatImpl }
+                client.speciesId = species.id
                 allSpecies.add(species)
             }
         }
@@ -248,6 +265,7 @@ class NeatImpl(
     override fun evolve() {
         // once we have changed the clients, we have to sort them into their
         // matching species (or create new ones to match!)
+        speciesDistanceFactor.update()
         sortClientsIntoSpecies()
         generationNumber++
 
@@ -260,7 +278,7 @@ class NeatImpl(
 
             // If all clients in the species are dead, then we should remove
             // the species (and clear the species of the clients that were in it)
-            if (species.clients.isEmpty()) {
+            if (species.clientIds.isEmpty()) {
                 species.extirpate()
                 iterator.remove()
             }
@@ -268,31 +286,50 @@ class NeatImpl(
 
         // If all species were killed off, then we should create a new species
         if (allSpecies.isEmpty()) {
-            val baseClient = clients[ThreadLocalRandom.current().nextInt(clients.size)]
-            val species = Species(this, speciesCounter++, baseClient)
+            val baseClient = clients[random.nextInt(clients.size)]
+            val species = Species(speciesCounter++, baseClient.id).apply { neat = this@NeatImpl }
+            baseClient.speciesId = species.id
             species.evaluate()  // Have a non-zero score
             allSpecies.add(species)
         }
 
-        // For each client that died, we need to sort it into a species by
-        // breeding. It has a higher chance of being sorted into a species
-        // with a higher score.
-        val probabilityMap = ProbabilityMap<Species>()
+        // For species with negative scores, we should treat the lowest negative
+        // as 0.1, and then normalize the scores to be positive.
+        val minScore = allSpecies.minOf { it.score }
+        if (minScore <= 0.0) {
+            for (species in allSpecies) {
+                species.score -= minScore
+
+                // If the score is still negative, then we should treat it as 0.1
+                if (species.score < 0.1) {
+                    species.score = 0.1
+                }
+            }
+        }
+
+        // Species with a higher score get a higher chance of breeding
+        val probabilityMap = ProbabilityMap<Species>(SplittableRandom(random.nextLong()))
         allSpecies.forEach { probabilityMap[it] = it.score }
         val eliteClients = LinkedList<Client>()
         for (client in clients) {
-            val species = client.species
+            val species = this.allSpecies.find { species: Species -> species.id == client.speciesId }
+
+            // Should never happen
+            if (species == null && client.speciesId != null) {
+                throw IllegalStateException("Found a member from an extinct species")
+            }
 
             // For interspecies mating, we should take random genomes from
             // random species and breed them together. Since the resulting
             // genome will probably be WEIRD and BAD, create a new species.
-            if (species == null && parameters.interspeciesMatingRate > ThreadLocalRandom.current().nextFloat()) {
+            if (species == null && random.chance(parameters.interspeciesMatingRate)) {
                 val a = probabilityMap.get().random()?.genome
                 val b = probabilityMap.get().random()?.genome
 
                 if (a != null && b != null) {
                     client.genome = a % b
-                    val species = Species(this, speciesCounter++, client)
+                    val species = Species(speciesCounter++, client.id).apply { neat = this@NeatImpl }
+                    client.speciesId = species.id
                     species.evaluate()
                     allSpecies.add(species)
                 }
@@ -315,10 +352,95 @@ class NeatImpl(
         // Elitism: Keep the best performing client in each species
         // But as the species gets more stale, we should mutate them
         for (elite in eliteClients) {
-            val staleness = elite.species!!.getStaleRate()
-            if (staleness > ThreadLocalRandom.current().nextFloat()) {
+            val species = this.allSpecies.find { species: Species -> species.id == elite.speciesId }
+
+            // Should never happen
+            if (species == null) {
+                throw IllegalStateException("Found a member from an extinct species")
+            }
+
+            val staleness = species.getStaleRate()
+            if (random.chance(1f - staleness.coerceAtMost(0.95f))) {
                 elite.mutate()
             }
+        }
+    }
+
+    override fun serialize(): String {
+        val mapper = fatObjectMapper()
+
+        // Using the DTO to serialize is redundant, biggest thing is the connection cache.
+        // we need to be able to map objects to objects here, so the DTO simplifies that
+        val neatDTO = NeatDTO(
+            countInputNodes=countInputNodes,
+            countOutputNodes=countOutputNodes,
+            countClients=countClients,
+            parameters=parameters,
+            speciesDistanceFactor=speciesDistanceFactor,
+            generationNumber=generationNumber,
+            connectionCache= LinkedHashSet(connectionCache.keys),  // special line here... cannot map objects to objects
+            nodeCache=nodeCache,
+            replacements=LinkedHashMap(replacements),
+            clients=clients,
+            allSpecies=allSpecies,
+            speciesCounter=speciesCounter,
+        )
+
+        return mapper.writeValueAsString(neatDTO)
+    }
+
+    companion object {
+        @JvmStatic
+        fun fromJson(json: String): NeatImpl {
+            val mapper = fatObjectMapper()
+
+            val dto: NeatDTO = mapper.readValue(json)
+            val neat = NeatImpl(dto.countInputNodes, dto.countOutputNodes, dto.countClients, dto.parameters)
+
+            // Copy the data from the DTO to the NEAT instance
+            neat.countInputNodes = dto.countInputNodes
+            neat.countOutputNodes = dto.countOutputNodes
+            neat.countClients = dto.countClients
+            neat.speciesDistanceFactor = dto.speciesDistanceFactor
+            neat.generationNumber = dto.generationNumber
+            neat.connectionCache = LinkedHashMap(dto.connectionCache.associateBy { it })
+            neat.nodeCache = dto.nodeCache.toMutableList()
+            neat.replacements = dto.replacements
+            neat.clients = dto.clients
+            neat.allSpecies = dto.allSpecies.toMutableList()
+            neat.speciesCounter = dto.speciesCounter
+
+            // Update speciesDistanceFactor to use the proper Neat instance
+            neat.speciesDistanceFactor.neat = neat
+
+            // Update caches to use the proper Neat instance
+            for ((key, value) in neat.connectionCache) {
+                key.neat = neat
+                value.neat = neat
+            }
+            for (node in neat.nodeCache) {
+                node.neat = neat
+            }
+
+            // Update clients to use the proper Neat instance
+            for (client in neat.clients) {
+                client.neat = neat
+                client.genome.neat = neat
+
+                for (connection in client.genome.connections) {
+                    connection.neat = neat
+                }
+                for (node in client.genome.nodes) {
+                    node.neat = neat
+                }
+            }
+
+            // Update species to use the proper Neat instance
+            for (species in neat.allSpecies) {
+                species.neat = neat
+            }
+
+            return neat
         }
     }
 }

@@ -1,9 +1,8 @@
 package com.cjcrafter.neat.mutate
 
-import com.cjcrafter.neat.Neat
 import com.cjcrafter.neat.genome.ConnectionGene
 import com.cjcrafter.neat.genome.Genome
-import java.util.concurrent.ThreadLocalRandom
+import com.cjcrafter.neat.util.chance
 
 /**
  * This mutation looks at each connection in a genome, and shifts the weights
@@ -17,26 +16,24 @@ import java.util.concurrent.ThreadLocalRandom
  * maximum, and need to explore other areas of the solution space. By randomizing
  * the weight of a connection, we might significantly impact the phenotype of
  * the neural network.
- *
- * @property neat The [Neat] instance managing this object.
  */
-class WeightsMutation(override val neat: Neat) : Mutation {
+class WeightsMutation : Mutation() {
+
     override fun mutate(genome: Genome) {
-        val rand = ThreadLocalRandom.current()
 
         // Chance to trigger the weight mutation in the first place
-        if (rand.nextFloat() < neat.parameters.mutateWeightChance) {
+        if (!neat.random.chance(neat.parameters.mutateWeightChance))
             return
-        }
 
         // Each connection has a chance to be mutated
         for (connection in genome.connections) {
-            mutateOne(rand, connection)
+            mutateOne(connection)
         }
     }
 
-    private fun mutateOne(random: ThreadLocalRandom, connection: ConnectionGene) {
-        if (random.nextFloat() < neat.parameters.mutateWeightShiftChance) {
+    private fun mutateOne(connection: ConnectionGene) {
+        val random = connection.neat.random
+        if (random.chance(neat.parameters.mutateWeightShiftChance)) {
             connection.weight += random.nextGaussian().toFloat() * neat.parameters.mutateWeightShiftStrength
         } else {
             connection.weight = random.nextGaussian().toFloat() * neat.parameters.mutateWeightRandomizeStrength

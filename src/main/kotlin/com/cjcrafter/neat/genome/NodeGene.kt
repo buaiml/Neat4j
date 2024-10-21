@@ -1,8 +1,8 @@
 package com.cjcrafter.neat.genome
 
 import com.cjcrafter.neat.Neat
+import com.fasterxml.jackson.annotation.JsonIgnore
 import org.joml.Vector2f
-import org.joml.Vector2fc
 
 /**
  * Represents a node in the neural network.
@@ -15,11 +15,14 @@ import org.joml.Vector2fc
  * @property position The position of this node in the network.
  */
 class NodeGene internal constructor(
-    override val neat: Neat,
     override var id: Int,
-    var position: Vector2fc = Vector2f(),
+    var position: Vector2f = Vector2f(),
 ) : Gene, Cloneable {
+    @JsonIgnore
     override val type: Gene.Type = Gene.Type.NODE
+
+    @JsonIgnore
+    override lateinit var neat: Neat
 
     /**
      * Returns true if this node is an input node.
@@ -27,6 +30,7 @@ class NodeGene internal constructor(
      * An input node is a node that receives input from the "environment".
      * Before any value can be calculated, we must have the input nodes set.
      */
+    @JsonIgnore
     fun isInput(): Boolean {
         return id >= 0 && id < neat.countInputNodes
     }
@@ -38,6 +42,7 @@ class NodeGene internal constructor(
      * After all calculations are done, we can read the output nodes to get the
      * result of the neural network.
      */
+    @JsonIgnore
     fun isOutput(): Boolean {
         return id >= neat.countInputNodes && id < neat.countInputNodes + neat.countOutputNodes
     }
@@ -48,6 +53,7 @@ class NodeGene internal constructor(
      * A hidden node is a node that is neither an input nor an output node, and
      * is just used for internal calculations in the neural network.
      */
+    @JsonIgnore
     fun isHidden(): Boolean {
         return id >= neat.countInputNodes + neat.countOutputNodes
     }
@@ -72,7 +78,6 @@ class NodeGene internal constructor(
         other as NodeGene
 
         // Comparing genes of different Neat instances is not allowed
-        if (neat !== other.neat) throw IllegalArgumentException("Cannot compare genes of different Neat instances")
         if (id != other.id) return false
 
         return true

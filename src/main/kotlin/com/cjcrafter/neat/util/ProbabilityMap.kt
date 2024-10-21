@@ -1,8 +1,10 @@
 package com.cjcrafter.neat.util
 
-import java.util.concurrent.ThreadLocalRandom
+import java.util.SplittableRandom
 
-class ProbabilityMap<E> {
+class ProbabilityMap<E>(
+    val random: SplittableRandom
+) {
 
     private class Node<E>(
         val element: E,
@@ -17,6 +19,9 @@ class ProbabilityMap<E> {
         if (probabilities.find { it.element == element } != null) {
             throw IllegalArgumentException("$element already exists in the probability map")
         }
+        if (probability <= 0) {
+            throw IllegalArgumentException("Probability must be greater than 0")
+        }
 
         val node = Node(element, total, total + probability)
         probabilities.add(node)
@@ -24,7 +29,7 @@ class ProbabilityMap<E> {
     }
 
     fun get(): E {
-        val random = ThreadLocalRandom.current().nextDouble() * total
+        val random = random.nextDouble() * total
         return binarySearch(random).element
     }
 

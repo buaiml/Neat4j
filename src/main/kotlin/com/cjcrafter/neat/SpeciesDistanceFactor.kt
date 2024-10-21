@@ -1,19 +1,31 @@
 package com.cjcrafter.neat
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import kotlin.math.abs
 
 class SpeciesDistanceFactor(
-    override val neat: Neat,
     var speciesDistance: Float = 3.0f,
 ) : NeatInstance {
+
+    @JsonIgnore
+    override lateinit var neat: Neat
 
     var velocity = 0f
 
     fun update() {
+        val attempts = 4
+        for (i in 0 until attempts) {
+            neat.sortClientsIntoSpecies()
+            updateOnce()
+        }
+    }
+
+    fun updateOnce() {
         val min = 0.1f
         val max = neat.parameters.speciesDistance * 2.0f
 
-        val delta = neat.parameters.targetSpeciesCount - neat.allSpecies.size
+        val targetSpeciesCount = neat.countClients / neat.parameters.targetClientsPerSpecies
+        val delta = targetSpeciesCount - neat.allSpecies.size
         if (delta == 0)
             return
 
@@ -36,7 +48,7 @@ class SpeciesDistanceFactor(
         speciesDistance = smoothDamp(
             speciesDistance,
             target,
-            0.008f * neat.parameters.targetSpeciesCount,
+            0.008f * targetSpeciesCount,
             deltaTime,
             0.25f / deltaTime,
         )

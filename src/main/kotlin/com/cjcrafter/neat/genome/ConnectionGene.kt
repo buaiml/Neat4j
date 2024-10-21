@@ -1,6 +1,7 @@
 package com.cjcrafter.neat.genome
 
 import com.cjcrafter.neat.Neat
+import com.fasterxml.jackson.annotation.JsonIgnore
 
 /**
  * Represents a connection between two [NodeGene]s in a neural network.
@@ -17,13 +18,16 @@ import com.cjcrafter.neat.Neat
  * @property toId The id of the node this connection is going to.
  */
 class ConnectionGene(
-    override val neat: Neat,
     override var id: Int,
     var fromId: Int,
     var toId: Int,
 ): Gene, Cloneable {
+    @JsonIgnore
     override val type = Gene.Type.CONNECTION
     var isBiasConnection = false
+
+    @JsonIgnore
+    override lateinit var neat: Neat
 
     /**
      * The weight of this connection. When taking in an input from the [fromId]
@@ -34,7 +38,7 @@ class ConnectionGene(
         set(value) {
             if (value.isNaN() || value.isInfinite())
                 throw IllegalArgumentException("Invalid weight: $value")
-            field = value.coerceIn(neat.parameters.minWeight, neat.parameters.maxWeight)
+            field = value//.coerceIn(neat.parameters.minWeight, neat.parameters.maxWeight)
         }
 
     /**
@@ -63,7 +67,6 @@ class ConnectionGene(
 
         other as ConnectionGene
 
-        if (neat != other.neat) throw IllegalArgumentException("Cannot compare genes of different Neat instances")
         if (fromId != other.fromId) return false
         if (toId != other.toId) return false
 

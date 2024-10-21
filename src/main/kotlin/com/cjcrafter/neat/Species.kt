@@ -1,7 +1,7 @@
 package com.cjcrafter.neat
 
 import com.cjcrafter.neat.genome.Genome
-import java.util.concurrent.ThreadLocalRandom
+import com.fasterxml.jackson.annotation.JsonIgnore
 import kotlin.math.roundToInt
 
 /**
@@ -10,20 +10,23 @@ import kotlin.math.roundToInt
  * of the clients.
  *
  * @property neat The [Neat] instance managing this object.
- * @property base The base client of this species.
+ * @property baseId The base client of this species.
  * @constructor Create empty Species
  */
 class Species(
-    override val neat: Neat,
     val id: Int,
-    private var base: Client,
-): NeatInstance, ClientHolder, Comparable<Species> {
+    var baseId: Int,
+): NeatInstance, Comparable<Species> {
 
-    override val clients: MutableList<Client> = mutableListOf()
-    override var champion: Client? = null
+    @JsonIgnore
+    override lateinit var neat: Neat
+
+    val clientIds: MutableList<Int> = mutableListOf()
+
+    var championId: Int? = null
     var score = 0.0
     var generations = 0
-    private var isExtinct = false
+    var isExtinct = false
 
     // A species may become stagnant if it does not improve over a certain number
     // of generations. This is used to track the number of generations that the
@@ -31,14 +34,26 @@ class Species(
     var staleness = 0
     var bestScore = 0.0
 
+    var base: Client
+        @JsonIgnore
+        get() = neat.clients[baseId]
+        @JsonIgnore
+        set(value) { baseId = value.id }
+
+    var champion: Client?
+        @JsonIgnore
+        get() = championId?.let { neat.clients[it] }
+        @JsonIgnore
+        set(value) { championId = value?.id }
+
     init {
-        base.species = this
-        clients.add(base)
+        clientIds.add(baseId)
     }
 
     /**
      * Returns true if the species has not improved over a couple generations.
      */
+    @JsonIgnore
     fun isStale(): Boolean {
         return staleness >= neat.parameters.stagnationLimit
     }
@@ -48,6 +63,7 @@ class Species(
      * value of 0 means that the species is not stale, while a value of 1 means
      * that the species is very stale.
      */
+    @JsonIgnore
     fun getStaleRate(): Float {
         val limit = neat.parameters.stagnationLimit
         return (staleness.toFloat() / limit)
@@ -57,11 +73,11 @@ class Species(
      * Returns a random client from this species.
      */
     fun random(): Client? {
-        if (clients.isEmpty())
+        if (clientIds.isEmpty())
             return null
 
-        val index = ThreadLocalRandom.current().nextInt(clients.size)
-        return clients[index]
+        val index = neat.random.nextInt(clientIds.size)
+        return neat.clients[clientIds[index]]
     }
 
     /**
@@ -95,8 +111,8 @@ class Species(
             throw IllegalStateException("Species is extinct")
 
         if (force || matches(client)) {
-            client.species = this
-            clients.add(client)
+            client.speciesId = id
+            clientIds.add(client.id)
             return true
         }
         return false
@@ -108,12 +124,13 @@ class Species(
      */
     fun evaluate() {
         score = 0.0
-        for (client in clients) {
+        for (clientId in clientIds) {
+            val client = neat.clients[clientId]
             score += client.score
 
             // Keep track of the best client in this species
-            if (champion == null || client.score > champion!!.score) {
-                champion = client
+            if (championId == null || client.score > champion!!.score) {
+                championId = client.id
             }
         }
 
@@ -125,11 +142,7 @@ class Species(
             staleness++
         }
 
-        score /= clients.size
-
-        // when score is exactly 0, we end up with a species that has no chance
-        // of breeding. We need to make sure that the final score is non-zero.
-        score = score.coerceAtLeast(0.0001)
+        score /= clientIds.size
         generations++
     }
 
@@ -138,16 +151,33 @@ class Species(
      */
     fun reset(overrideBase: Client? = null) {
         score = 0.0
-        champion = null
-
-        // Use some random client as the new base
-        base = overrideBase ?: (random() ?: base)
-        champion = base
+        championId = null
 
         // Remove all current clients from the species (many will be resorted
         // back into this species by the managing Neat instance)
-        clients.forEach { it.species = null }
-        clients.clear()
+        val potentialNewBase = mutableListOf<Client>()
+        for (clientId in clientIds) {
+
+            // This check is *ONLY* for Neat#updateClients(Int). When the number
+            // of clients is reduced, we do not need to update those "already
+            // removed" clients.
+            if (neat.clients.size <= clientId)
+                continue
+
+            neat.clients[clientId].speciesId = null
+            potentialNewBase.add(neat.clients[clientId])
+        }
+        clientIds.clear()
+
+        // Happens if all clients are removed from Neat#updateClients(Int)
+        if (potentialNewBase.isEmpty()) {
+            extirpate()
+            return
+        }
+
+        // Use some random client as the new base
+        base = overrideBase ?: potentialNewBase[neat.random.nextInt(potentialNewBase.size)]
+        championId = base.id
 
         // Add the new base client back in
         put(base, true)
@@ -159,8 +189,8 @@ class Species(
      */
     fun extirpate() {
         isExtinct = true
-        clients.forEach { it.species = null }
-        clients.clear()
+        clientIds.forEach { neat.clients[it].speciesId = null }
+        clientIds.clear()
     }
 
     /**
@@ -178,6 +208,7 @@ class Species(
 
         // Sort the clients by their score, so we only kill off the worst
         // performing clients (keeping the strongest clients alive)
+        val clients = clientIds.map { neat.clients[it] }.toMutableList()
         clients.sort()
 
         // When a species is stale for so long, we are probably stuck in a local
@@ -194,7 +225,7 @@ class Species(
         // since the lowest score is at the beginning of the list, we can just
         // remove the first `kill` clients.
         for (i in 0 until kill) {
-            clients[0].species = null
+            clients[0].speciesId = null
             clients.removeAt(0)
         }
 
@@ -206,6 +237,9 @@ class Species(
                 base = random()!!
             }
         }
+
+        clientIds.clear()
+        clientIds.addAll(clients.map { it.id })
     }
 
     /**

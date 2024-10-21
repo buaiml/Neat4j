@@ -4,12 +4,17 @@ import com.cjcrafter.neat.compute.Calculator
 import com.cjcrafter.neat.compute.SimpleCalculator
 import com.cjcrafter.neat.genome.Genome
 import com.cjcrafter.neat.genome.NodeGene
+import com.cjcrafter.neat.serialize.fatObjectMapper
+import com.fasterxml.jackson.annotation.JacksonInject
+import com.fasterxml.jackson.annotation.JsonIgnore
 
 class Client(
-    override val neat: Neat,
     val id: Int,
-    genome: Genome = neat.createGenome(),
+    genome: Genome,
 ) : NeatInstance, Comparable<Client> {
+
+    @JsonIgnore
+    override lateinit var neat: Neat
 
     var genome = genome
         set(value) {
@@ -17,10 +22,11 @@ class Client(
             calculator0 = null
         }
     var score: Double = 0.0
-    var species: Species? = null
+    var speciesId: Int? = null
 
     private var calculator0: Calculator? = null
     val calculator: Calculator
+        @JsonIgnore
         get() {
             if (calculator0 == null) {
                 calculator0 = SimpleCalculator(genome)
@@ -64,6 +70,6 @@ class Client(
     }
 
     override fun toString(): String {
-        return "Client(id=$id, genome=$genome, score=$score, species=$species)"
+        return "Client(id=$id, genome=$genome, score=$score, species=$speciesId)"
     }
 }

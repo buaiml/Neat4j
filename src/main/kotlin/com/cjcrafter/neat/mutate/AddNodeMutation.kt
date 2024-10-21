@@ -1,9 +1,8 @@
 package com.cjcrafter.neat.mutate
 
-import com.cjcrafter.neat.Neat
 import com.cjcrafter.neat.genome.ConnectionGene
 import com.cjcrafter.neat.genome.Genome
-import java.util.concurrent.ThreadLocalRandom
+import com.cjcrafter.neat.util.chance
 
 /**
  * This mutation adds a new node to the genome.
@@ -14,14 +13,12 @@ import java.util.concurrent.ThreadLocalRandom
  * this, we copy the weight of the previous connection, and apply that weight to
  * our 2 new connections. **Note:** Depending on your activation function, this
  * is *not* a perfect way to prevent changes.
- *
- * @property neat The [Neat] instance managing this object.
  */
-class AddNodeMutation(override val neat: Neat) : Mutation {
+class AddNodeMutation : Mutation() {
+
     override fun mutate(genome: Genome) {
         // chance to trigger
-        val rand = ThreadLocalRandom.current()
-        if (rand.nextFloat() >= neat.parameters.mutateAddNodeChance)
+        if (!neat.random.chance(neat.parameters.mutateAddNodeChance))
             return
 
         // If there are no connections, we can't add a node
@@ -32,7 +29,7 @@ class AddNodeMutation(override val neat: Neat) : Mutation {
         // connection to replace with 1 node and 2 connections.
         val maxTries = 20
         for (i in 0 until maxTries) {
-            val randomConnection = genome.connections[rand.nextInt(genome.connections.size)]
+            val randomConnection = genome.connections[neat.random.nextInt(genome.connections.size)]
             if (!randomConnection.isBiasConnection) {
                 addNode(genome, randomConnection)
                 return
