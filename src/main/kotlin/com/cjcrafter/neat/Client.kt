@@ -4,6 +4,7 @@ import com.cjcrafter.neat.compute.Calculator
 import com.cjcrafter.neat.compute.SimpleCalculator
 import com.cjcrafter.neat.genome.Genome
 import com.cjcrafter.neat.genome.NodeGene
+import com.cjcrafter.neat.serialize.fatObjectMapper
 import com.fasterxml.jackson.annotation.JacksonInject
 import com.fasterxml.jackson.annotation.JsonIgnore
 

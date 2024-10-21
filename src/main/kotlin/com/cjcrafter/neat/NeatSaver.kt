@@ -36,11 +36,12 @@ class NeatSaver(
         neatFile.createNewFile()
         neatFile.writeText(neatJson)
 
-        val bestClientFile = File(saveFolder, "best-client-${neat.generationNumber}.json")
+        val bestClientFile = File(saveFolder, "best-calculator-${neat.generationNumber}.json")
         bestClientFile.createNewFile()
         val bestClient = neat.clients.maxByOrNull { it.score }!!
+        val bestCalculator = bestClient.calculator
         val mapper = fatObjectMapper()
-        val bestClientJson = mapper.writeValueAsString(bestClient)
+        val bestClientJson = mapper.writeValueAsString(bestCalculator)
         bestClientFile.writeText(bestClientJson)
     }
 }

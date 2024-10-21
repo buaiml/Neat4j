@@ -1,6 +1,11 @@
 package com.cjcrafter.neat.compute
 
 import com.cjcrafter.neat.genome.Genome
+import com.cjcrafter.neat.serialize.fatObjectMapper
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.annotation.JsonProperty
 import java.util.concurrent.CompletableFuture
 import kotlin.math.exp
 
@@ -8,20 +13,37 @@ import kotlin.math.exp
  * Wraps the nodes/connections of a [Genome] so you can calculate outputs.
  *
  * The calculator only works if connections flow left->right.
- *
- * @param genome The genome to base the calculator off of
  */
-class SimpleCalculator(private val genome: Genome) : Calculator {
+class SimpleCalculator : Calculator {
 
-    private val inputs = mutableListOf<Node>()
-    private val hidden = mutableListOf<Node>()
-    private val outputs = mutableListOf<Node>()
-    private val nodeCache = mutableMapOf<Int, Node>()
+    @JsonProperty("isAddBias") private val isAddBias: Boolean
+    @JsonProperty("inputs") private val inputs = mutableListOf<Node>()
+    @JsonProperty("hidden") private val hidden = mutableListOf<Node>()
+    @JsonProperty("outputs") private val outputs = mutableListOf<Node>()
+    @JsonIgnore private val nodeCache = mutableMapOf<Int, Node>()
 
-    init {
+    @JsonCreator
+    constructor(
+        @JsonProperty("isAddBias") isAddBias: Boolean,
+        @JsonProperty("inputs") inputs: List<Node>,
+        @JsonProperty("hidden") hidden: List<Node>,
+        @JsonProperty("outputs") outputs: List<Node>,
+    ) {
+        this.isAddBias = isAddBias
+        this.inputs.addAll(inputs)
+        this.hidden.addAll(hidden)
+        this.outputs.addAll(outputs)
+
+        for (node in inputs + hidden + outputs)
+            nodeCache[node.id] = node
+    }
+
+    constructor(genome: Genome) {
+        isAddBias = genome.neat.parameters.useBiasNode
+
         // Sorts the nodes into their respective lists
         for (node in genome.nodes) {
-            val newNode = Node(node.position.x())
+            val newNode = Node(node.id, node.position.x())
             nodeCache[node.id] = newNode
 
             when {
@@ -38,7 +60,7 @@ class SimpleCalculator(private val genome: Genome) : Calculator {
         // Loop through all connections, and add connections to our "calculator nodes"
         for (connection in genome.connections) {
             val newConnection = Connection(
-                nodeCache[connection.fromId]!!,
+                connection.fromId,
                 connection.weight,
                 connection.enabled
             )
@@ -56,7 +78,7 @@ class SimpleCalculator(private val genome: Genome) : Calculator {
     @Synchronized
     override fun calculate(input: FloatArray): CompletableFuture<FloatArray> {
         var input = input
-        if (genome.neat.parameters.useBiasNode) {
+        if (isAddBias) {
             val newInput = FloatArray(input.size + 1)
             newInput[0] = 1f
             System.arraycopy(input, 0, newInput, 1, input.size)
@@ -70,9 +92,9 @@ class SimpleCalculator(private val genome: Genome) : Calculator {
         for (i in input.indices)
             inputs[i].output = input[i]
         for (node in hidden)
-            node.calculate()
+            node.calculate(nodeCache)
         for (node in outputs)
-            node.calculate()
+            node.calculate(nodeCache)
 
         // Map the output values into an array to return
         val output = outputs.map { it.output }.toFloatArray()
@@ -80,15 +102,18 @@ class SimpleCalculator(private val genome: Genome) : Calculator {
     }
 
 
-    private class Node(val x: Float) : Comparable<Node> {
-        var output: Float = 0f
+    /**
+     * Simple representation of a node in the calculator.
+     */
+    class Node(val id: Int, val x: Float) : Comparable<Node> {
+        @JsonIgnore var output: Float = 0f
         val incoming: MutableList<Connection> = mutableListOf()
 
-        fun calculate() {
+        fun calculate(nodeCache: Map<Int, Node>) {
             var sum = 0.0
             for (connection in incoming) {
                 if (connection.enabled)
-                    sum += connection.from.output * connection.weight
+                    sum += nodeCache[connection.fromId]!!.output * connection.weight
             }
             output = activate(sum.toFloat())
         }
@@ -105,5 +130,16 @@ class SimpleCalculator(private val genome: Genome) : Calculator {
         }
     }
 
-    private class Connection(val from: Node, val weight: Float, val enabled: Boolean)
+    /**
+     * Simple representation of a connection between two nodes.
+     */
+    class Connection(val fromId: Int, val weight: Float, val enabled: Boolean)
+
+    companion object {
+        @JvmStatic
+        fun fromJson(json: String): SimpleCalculator {
+            val mapper = fatObjectMapper()
+            return mapper.readValue(json, SimpleCalculator::class.java)
+        }
+    }
 }
