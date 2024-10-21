@@ -95,11 +95,11 @@ class NeatImpl(
 
         // Update the positions of the nodes
         for (i in 0 until countInputNodes) {
-            val node = getNode(i)
+            val node = nodeCache[i]
             node.position = Vector2f(0.1f, (i.toFloat() + 1) / (countInputNodes + 1))
         }
         for (i in 0 until countOutputNodes) {
-            val node = getNode(i + countInputNodes)
+            val node = nodeCache[i + countInputNodes]
             node.position = Vector2f(0.9f, (i.toFloat() + 1) / (countOutputNodes + 1))
         }
 
