@@ -66,6 +66,12 @@ class NeatImpl(
     }
 
     fun updateNodeCounts(countInputNodes: Int, countOutputNodes: Int) {
+        // When we use a bias node, there is always 1 more node
+        var countInputNodes = countInputNodes
+        if (parameters.useBiasNode) {
+            countInputNodes++;
+        }
+
         if (countInputNodes < this.countInputNodes)
             throw IllegalArgumentException("Cannot reduce the number of input nodes")
         if (countOutputNodes < this.countOutputNodes)
