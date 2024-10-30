@@ -125,6 +125,23 @@ class NeatImpl(
         for (client in clients) {
             client.updateNodeCounts(oldIdToNewIdCache, nodeCache)
         }
+
+        // For fully connected networks, we should loop through all clients and
+        // create connections between the input and output nodes.
+        if (parameters.isFullNetwork) {
+            for (client in clients) {
+                val genome = client.genome
+                for (input in 0 until countInputNodes) {
+                    for (output in countInputNodes until countInputNodes + countOutputNodes) {
+                        val newConnection = createConnection(input, output)
+                        if (newConnection in genome.connections) {
+                            newConnection.weight = random.nextGaussian().toFloat()
+                            genome.connections.add(newConnection)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     fun updateClients(countClients: Int) {
