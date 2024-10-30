@@ -134,7 +134,7 @@ class NeatImpl(
                 for (input in 0 until countInputNodes) {
                     for (output in countInputNodes until countInputNodes + countOutputNodes) {
                         val newConnection = createConnection(input, output)
-                        if (newConnection in genome.connections) {
+                        if (newConnection !in genome.connections) {
                             newConnection.weight = random.nextGaussian().toFloat()
                             genome.connections.add(newConnection)
                         }
